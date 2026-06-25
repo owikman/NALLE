@@ -12,7 +12,7 @@ export async function POST() {
   if (!priceId || priceId === 'price_placeholder') return NextResponse.json({ error: `STRIPE_PREMIUM_PRICE_ID missing or placeholder` }, { status: 500 })
   if (!appUrl) return NextResponse.json({ error: `NEXT_PUBLIC_APP_URL missing` }, { status: 500 })
 
-  const stripe = new Stripe(stripeKey, { apiVersion: '2025-05-28.basil' })
+  const stripe = new Stripe(stripeKey, { apiVersion: '2026-06-24.dahlia' })
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-05-28.basil' })
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-06-24.dahlia' })
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')!
 
