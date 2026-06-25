@@ -35,10 +35,10 @@ export default async function ChecklistsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Checklists</h1>
-      <p className="text-gray-500 text-sm mb-8">Work through each module to get your finances in order</p>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Checklists</h1>
+      <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 32 }}>Work through each module to get your finances in order</p>
 
-      <div className="grid grid-cols-1 gap-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {MODULES.map(mod => {
           const stats = getModuleStats(mod.key)
           const pct = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
@@ -48,28 +48,23 @@ export default async function ChecklistsPage() {
             <Link
               key={mod.key}
               href={`/checklists/${mod.key}`}
-              className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-5 hover:border-blue-200 hover:shadow-sm transition-all"
+              style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: '24px', display: 'flex', alignItems: 'center', gap: 20, textDecoration: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', transition: 'box-shadow 0.15s' }}
             >
-              <div className="text-3xl">{mod.icon}</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h2 className="font-semibold text-gray-900">{mod.label}</h2>
-                  {done && <span className="text-xs bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-medium">Complete</span>}
+              <div style={{ fontSize: 32, flexShrink: 0 }}>{mod.icon}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827' }}>{mod.label}</h2>
+                  {done && <span style={{ fontSize: 11, background: '#f0fdf4', color: '#15803d', padding: '2px 8px', borderRadius: 99, fontWeight: 500 }}>Complete</span>}
                 </div>
-                <p className="text-sm text-gray-400 mb-3">{mod.description}</p>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${done ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                      style={{ width: `${pct}%` }}
-                    />
+                <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 14 }}>{mod.description}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ flex: 1, height: 4, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`, background: done ? '#10b981' : '#3b82f6', transition: 'width 0.3s' }} />
                   </div>
-                  <span className="text-xs text-gray-400 whitespace-nowrap">
-                    {stats.completed}/{stats.total}
-                  </span>
+                  <span style={{ fontSize: 12, color: '#9ca3af', whiteSpace: 'nowrap' }}>{stats.completed}/{stats.total}</span>
                 </div>
               </div>
-              <span className="text-gray-300 text-lg">›</span>
+              <span style={{ color: '#d1d5db', fontSize: 20, flexShrink: 0 }}>›</span>
             </Link>
           )
         })}

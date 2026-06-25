@@ -4,33 +4,14 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const REPORTS = [
-  {
-    type: 'pnl',
-    label: 'Profit & Loss',
-    icon: '📈',
-    description: 'Monthly revenue, costs, net profit and margin. Ready to share with your accountant.',
-  },
-  {
-    type: 'balance_sheet',
-    label: 'Balance Sheet',
-    icon: '⚖️',
-    description: 'Assets, liabilities and net position based on your latest financial data.',
-  },
-  {
-    type: 'cash_flow',
-    label: 'Cash Flow',
-    icon: '💧',
-    description: 'Current cash position, monthly flow, runway estimate and recent expenses.',
-  },
+  { type: 'pnl', label: 'Profit & Loss', icon: '📈', description: 'Monthly revenue, costs, net profit and margin. Ready to share with your accountant.' },
+  { type: 'balance_sheet', label: 'Balance Sheet', icon: '⚖️', description: 'Assets, liabilities and net position based on your latest financial data.' },
+  { type: 'cash_flow', label: 'Cash Flow', icon: '💧', description: 'Current cash position, monthly flow, runway estimate and recent expenses.' },
 ]
 
-interface ReportRecord {
-  id: string
-  report_type: string
-  period_end: string
-  generated_by: string
-  created_at: string
-}
+const REPORT_LABELS: Record<string, string> = { pnl: 'Profit & Loss', balance_sheet: 'Balance Sheet', cash_flow: 'Cash Flow' }
+
+interface ReportRecord { id: string; report_type: string; period_end: string; generated_by: string; created_at: string }
 
 export default function ReportsPage() {
   const [generating, setGenerating] = useState<string | null>(null)
@@ -42,12 +23,7 @@ export default function ReportsPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase
-        .from('reports')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(20)
+      const { data } = await supabase.from('reports').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
       setHistory(data ?? [])
     }
     load()
@@ -57,115 +33,67 @@ export default function ReportsPage() {
     setGenerating(type)
     setError(null)
     try {
-      const res = await fetch('/api/reports/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ report_type: type }),
-      })
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        throw new Error(json.error ?? `HTTP ${res.status}`)
-      }
-
-      // Trigger download
+      const res = await fetch('/api/reports/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ report_type: type }) })
+      if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error ?? `HTTP ${res.status}`) }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = `nalle-${type}-${new Date().toISOString().split('T')[0]}.xlsx`
-      a.click()
+      a.href = url; a.download = `nalle-${type}-${new Date().toISOString().split('T')[0]}.xlsx`; a.click()
       URL.revokeObjectURL(url)
-
-      // Refresh history
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase.from('reports').select('*')
-          .eq('user_id', user.id).order('created_at', { ascending: false }).limit(20)
-        setHistory(data ?? [])
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate report')
-    } finally {
-      setGenerating(null)
-    }
-  }
-
-  const REPORT_LABELS: Record<string, string> = {
-    pnl: 'Profit & Loss',
-    balance_sheet: 'Balance Sheet',
-    cash_flow: 'Cash Flow',
+      if (user) { const { data } = await supabase.from('reports').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20); setHistory(data ?? []) }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Failed to generate report') }
+    finally { setGenerating(null) }
   }
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Reports</h1>
-      <p className="text-sm text-gray-500 mb-8">Download Excel reports based on your financial data</p>
+    <div style={{ maxWidth: 640 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Reports</h1>
+      <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 32 }}>Download Excel reports based on your financial data</p>
 
-      {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && <div style={{ marginBottom: 16, padding: '12px 16px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, fontSize: 14, color: '#dc2626' }}>{error}</div>}
 
-      <div className="space-y-3 mb-10">
-        {REPORTS.map(report => (
-          <div key={report.type} className="bg-white border border-gray-100 rounded-xl p-5 flex items-center gap-5">
-            <div className="text-3xl">{report.icon}</div>
-            <div className="flex-1">
-              <h2 className="font-semibold text-gray-900 mb-0.5">{report.label}</h2>
-              <p className="text-sm text-gray-400">{report.description}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 40 }}>
+        {REPORTS.map(r => (
+          <div key={r.type} style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: '24px', display: 'flex', alignItems: 'center', gap: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: 32, flexShrink: 0 }}>{r.icon}</div>
+            <div style={{ flex: 1 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 4 }}>{r.label}</h2>
+              <p style={{ fontSize: 13, color: '#9ca3af', lineHeight: 1.5 }}>{r.description}</p>
             </div>
             <button
-              onClick={() => generate(report.type)}
+              onClick={() => generate(r.type)}
               disabled={!!generating}
-              className="shrink-0 bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+              style={{ flexShrink: 0, background: generating === r.type ? '#93c5fd' : '#2563eb', color: 'white', borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, border: 'none', cursor: generating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}
             >
-              {generating === report.type ? (
-                <>
-                  <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                '↓ Download'
-              )}
+              {generating === r.type ? <><span style={{ width: 12, height: 12, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} /> Generating...</> : '↓ Download'}
             </button>
           </div>
         ))}
       </div>
 
       {history.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">Previously generated</h2>
-          <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 12 }}>Previously generated</h2>
+          <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             {history.map((r, i) => (
-              <div
-                key={r.id}
-                className={`flex items-center justify-between px-4 py-3 text-sm ${i < history.length - 1 ? 'border-b border-gray-50' : ''}`}
-              >
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: i < history.length - 1 ? '1px solid #f9fafb' : 'none' }}>
                 <div>
-                  <span className="font-medium text-gray-800">{REPORT_LABELS[r.report_type] ?? r.report_type}</span>
-                  <span className="text-gray-400 ml-2 text-xs">
-                    {new Date(r.created_at).toLocaleDateString('fi-FI', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{REPORT_LABELS[r.report_type] ?? r.report_type}</span>
+                  <span style={{ fontSize: 12, color: '#9ca3af', marginLeft: 10 }}>{new Date(r.created_at).toLocaleDateString('fi-FI', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
-                <button
-                  onClick={() => generate(r.report_type)}
-                  disabled={!!generating}
-                  className="text-xs text-blue-500 hover:underline disabled:opacity-50"
-                >
-                  Regenerate
-                </button>
+                <button onClick={() => generate(r.report_type)} disabled={!!generating} style={{ fontSize: 13, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>Regenerate</button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-4">
-        <p className="text-sm font-medium text-blue-900 mb-1">Need a custom report?</p>
-        <p className="text-xs text-blue-700 mb-2">Ask the AI CFO to generate a specific breakdown or analysis.</p>
-        <a href="/chat" className="text-xs text-blue-600 hover:underline font-medium">Open AI CFO →</a>
+      <div style={{ background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: 16, padding: 24 }}>
+        <p style={{ fontSize: 14, fontWeight: 600, color: '#1e40af', marginBottom: 4 }}>Need a custom report?</p>
+        <p style={{ fontSize: 13, color: '#3b82f6', marginBottom: 12 }}>Ask the AI CFO to generate a specific breakdown or analysis.</p>
+        <a href="/chat" style={{ fontSize: 13, color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>Open AI CFO →</a>
       </div>
     </div>
   )
