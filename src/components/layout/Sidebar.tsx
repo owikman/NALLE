@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus, Brain } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
@@ -14,6 +14,7 @@ const nav = [
   { href: '/compliance', label: 'Compliance', icon: Shield },
   { href: '/chat', label: 'AI CFO', icon: MessageSquare },
   { href: '/plans', label: 'Plans', icon: Sparkles },
+  { href: '/advisor', label: 'AI Advisor', icon: Brain },
 ]
 
 interface Company { id: string; business_name: string | null }

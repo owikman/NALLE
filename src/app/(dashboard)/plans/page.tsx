@@ -95,7 +95,7 @@ export default function PlansPage() {
               { icon: '📊', title: 'AI Financial Plan', desc: 'Personalized growth roadmap and 3–6 month action plan generated from your data' },
               { icon: '🧠', title: 'Tax Strategy', desc: 'Finnish-specific optimization — YEL, VAT, and salary vs. dividend split for OY owners' },
               { icon: '💧', title: 'Cash Flow Coaching', desc: 'Identify cash flow risks and get specific actions to improve your runway' },
-              { icon: '📞', title: 'Expert Consultation', desc: 'Book a 30-minute call with a Finnish financial advisor or accountant' },
+              { icon: '💼', title: 'AI Business Consultation', desc: 'Deep-dive AI consultation covering your 30-day and 6-month action plan' },
               { icon: '🎯', title: 'Growth Strategies', desc: 'Concrete steps to hit your revenue targets and reduce unnecessary costs' },
               { icon: '🔔', title: 'Priority Compliance', desc: 'Never miss a deadline — personalized YEL, VAT and tax prepayment reminders' },
             ].map(f => (
