@@ -84,23 +84,51 @@ export default function PlansPage() {
 
       {!isPremium ? (
         <div style={{ background: 'linear-gradient(135deg, #1d4ed8, #1e40af)', borderRadius: 20, padding: 40, color: 'white', marginBottom: 24 }}>
-          <div style={{ fontSize: 36, marginBottom: 16 }}>✦</div>
-          <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>NALLE Premium</h2>
-          <p style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 32, maxWidth: 440, lineHeight: 1.6, fontSize: 15 }}>
-            Get a personalized AI-generated financial plan — growth roadmap, tax strategy, and cash flow actions tailored to your exact numbers.
+          <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.15)', borderRadius: 99, padding: '4px 14px', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 20 }}>PREMIUM</div>
+          <h2 style={{ fontSize: 26, fontWeight: 700, marginBottom: 10 }}>Everything you need to run a smarter business</h2>
+          <p style={{ color: 'rgba(255,255,255,0.75)', marginBottom: 32, maxWidth: 480, lineHeight: 1.7, fontSize: 15 }}>
+            Built for Finnish entrepreneurs — tax-smart, compliance-aware, and tailored to your exact numbers.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 32 }}>
-            {[{ icon: '📈', title: 'Growth Roadmap', desc: '3-6 month action plan' }, { icon: '💶', title: 'Tax Strategy', desc: 'Finnish-specific optimization' }, { icon: '💧', title: 'Cash Flow', desc: 'Specific improvement actions' }].map(f => (
-              <div key={f.title} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: 18 }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>{f.icon}</div>
-                <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{f.title}</p>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{f.desc}</p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
+            {[
+              { icon: '📊', title: 'AI Financial Plan', desc: 'Personalized growth roadmap and 3–6 month action plan generated from your data' },
+              { icon: '🧠', title: 'Tax Strategy', desc: 'Finnish-specific optimization — YEL, VAT, and salary vs. dividend split for OY owners' },
+              { icon: '💧', title: 'Cash Flow Coaching', desc: 'Identify cash flow risks and get specific actions to improve your runway' },
+              { icon: '📞', title: 'Expert Consultation', desc: 'Book a 30-minute call with a Finnish financial advisor or accountant' },
+              { icon: '🎯', title: 'Growth Strategies', desc: 'Concrete steps to hit your revenue targets and reduce unnecessary costs' },
+              { icon: '🔔', title: 'Priority Compliance', desc: 'Never miss a deadline — personalized YEL, VAT and tax prepayment reminders' },
+            ].map(f => (
+              <div key={f.title} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 14, padding: '18px 20px' }}>
+                <div style={{ fontSize: 22, marginBottom: 10 }}>{f.icon}</div>
+                <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{f.title}</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>{f.desc}</p>
               </div>
             ))}
           </div>
-          <button onClick={handleUpgrade} disabled={upgrading} style={{ background: 'white', color: '#1d4ed8', borderRadius: 14, padding: '14px 28px', fontSize: 15, fontWeight: 700, border: 'none', cursor: upgrading ? 'not-allowed' : 'pointer', opacity: upgrading ? 0.7 : 1 }}>
-            {upgrading ? 'Redirecting...' : 'Upgrade to Premium →'}
-          </button>
+
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 24, marginBottom: 28 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                'Unlimited AI CFO conversations',
+                'Advanced financial reports',
+                'Expense optimization suggestions',
+                'Cancel anytime',
+              ].map(item => (
+                <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>
+                  <span style={{ color: '#86efac', fontWeight: 700, fontSize: 14 }}>✓</span> {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <button onClick={handleUpgrade} disabled={upgrading} style={{ background: 'white', color: '#1d4ed8', borderRadius: 14, padding: '14px 28px', fontSize: 15, fontWeight: 700, border: 'none', cursor: upgrading ? 'not-allowed' : 'pointer', opacity: upgrading ? 0.7 : 1 }}>
+              {upgrading ? 'Redirecting...' : 'Upgrade to Premium →'}
+            </button>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>€29 / month · Cancel anytime</p>
+          </div>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 16 }}>Trusted by Finnish entrepreneurs</p>
         </div>
       ) : activePlan ? (
         <PlanDisplay plan={activePlan} plans={plans} onSelect={p => setActivePlan(p.content as Plan)} />
