@@ -1,3 +1,5 @@
 {
-  "installCommand": "pnpm install --ignore-scripts"
+  "buildCommand": "next build",
+  "installCommand": "pnpm install --ignore-scripts",
+  "framework": "nextjs"
 }
