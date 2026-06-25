@@ -22,12 +22,16 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: snapshot }, { data: snapshots }, { data: expenses }, { data: obligations }, { data: profile }] = await Promise.all([
+  const { data: profile } = await supabase.from('profiles').select('business_name,onboarding_completed,active_company_id').eq('id', user!.id).single()
+  const companyId = profile?.active_company_id
+
+  const [{ data: snapshot }, { data: snapshots }, { data: expenses }, { data: obligations }] = await Promise.all([
     supabase.from('financial_snapshots').select('*').eq('user_id', user!.id).order('snapshot_date', { ascending: false }).limit(1).single(),
     supabase.from('financial_snapshots').select('snapshot_date,monthly_revenue,monthly_costs').eq('user_id', user!.id).order('snapshot_date', { ascending: true }).limit(12),
     supabase.from('expense_logs').select('category,amount').eq('user_id', user!.id),
-    supabase.from('compliance_obligations').select('*').eq('user_id', user!.id).in('status', ['due_soon', 'overdue']).order('due_date', { ascending: true }).limit(5),
-    supabase.from('profiles').select('business_name,onboarding_completed').eq('id', user!.id).single(),
+    companyId
+      ? supabase.from('compliance_obligations').select('*').eq('company_id', companyId).in('status', ['due_soon', 'overdue']).order('due_date', { ascending: true }).limit(5)
+      : supabase.from('compliance_obligations').select('*').eq('user_id', user!.id).in('status', ['due_soon', 'overdue']).order('due_date', { ascending: true }).limit(5),
   ])
 
   const fmt = (n: number) => new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR' }).format(n)
@@ -77,7 +81,7 @@ export default async function DashboardPage() {
           <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 4 }}>{profile.business_name ?? 'Dashboard'}</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>Financial overview</p>
         </div>
-        <Link href="/intake" style={{ fontSize: 13, color: '#9ca3af', border: '1px solid #e5e7eb', borderRadius: 10, padding: '8px 14px', textDecoration: 'none', fontWeight: 500 }}>
+        <Link href={companyId ? `/intake?company=${companyId}` : '/intake'} style={{ fontSize: 13, color: '#9ca3af', border: '1px solid #e5e7eb', borderRadius: 10, padding: '8px 14px', textDecoration: 'none', fontWeight: 500 }}>
           Update intake
         </Link>
       </div>
