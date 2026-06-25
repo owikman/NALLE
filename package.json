@@ -1,15 +1,39 @@
 {
-  "name": "nalle",
-  "version": "0.0.1",
+  "name": "web",
+  "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@10.0.0",
   "scripts": {
-    "build": "cd apps/web && pnpm build",
-    "dev": "cd apps/web && pnpm dev",
-    "lint": "cd apps/web && pnpm lint"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^0.0.56",
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@stripe/stripe-js": "^9.8.0",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "@tanstack/react-query": "^5.101.1",
+    "ai": "^3.4.33",
+    "lucide-react": "^1.21.0",
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.9.0",
+    "stripe": "^22.2.3",
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
-    "turbo": "^2.5.4",
-    "typescript": "^5.8.3"
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
