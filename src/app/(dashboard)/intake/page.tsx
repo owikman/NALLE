@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type Answer = string | number | boolean | null
@@ -135,8 +135,10 @@ const STEPS: Step[] = [
   },
 ]
 
-export default function IntakePage() {
+function IntakeForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editCompanyId = searchParams.get('company')
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const [current, setCurrent] = useState<Answer>('')
@@ -179,10 +181,13 @@ export default function IntakePage() {
     setLoading(true)
     setError(null)
     try {
+      const payload = editCompanyId
+        ? { answers: finalAnswers, company_id: editCompanyId }
+        : finalAnswers
       const res = await fetch('/api/intake/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalAnswers),
+        body: JSON.stringify(payload),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to save')
@@ -347,5 +352,13 @@ export default function IntakePage() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function IntakePage() {
+  return (
+    <Suspense>
+      <IntakeForm />
+    </Suspense>
   )
 }
