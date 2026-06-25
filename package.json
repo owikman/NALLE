@@ -4,13 +4,12 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "type-check": "turbo run type-check"
+    "build": "cd apps/web && pnpm build",
+    "dev": "cd apps/web && pnpm dev",
+    "lint": "cd apps/web && pnpm lint",
+    "type-check": "cd apps/web && pnpm type-check"
   },
   "devDependencies": {
-    "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   }
 }
