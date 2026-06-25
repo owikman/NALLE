@@ -4,9 +4,8 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 
-const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
-
 export async function POST() {
+  const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

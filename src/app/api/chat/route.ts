@@ -6,9 +6,6 @@ import { NextResponse } from 'next/server'
 
 export const maxDuration = 60
 
-const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-})
 
 async function buildFinancialContext(userId: string) {
   const db = createServiceClient()
@@ -127,6 +124,7 @@ Here is the user's current financial data:
 
 ${financialContext}`
 
+  const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
   try {
     const result = await streamText({
       model: anthropic('claude-sonnet-4-6'),
