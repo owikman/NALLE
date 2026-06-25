@@ -414,17 +414,31 @@ Dates are computed against the Finnish tax calendar (Vero.fi schedule).
 
 ---
 
+## Business Model
+
+NALLE is a three-tier product:
+
+| Tier | What you get |
+|---|---|
+| **Free** | Dashboard, expenses, checklists, compliance alerts, basic AI chat |
+| **Premium** | AI-generated financial plans — growth roadmap, tax optimization strategy, cash flow improvement plan |
+| **Add-on** | A human advisor reviews and presents the AI-generated plan to you |
+
+The core insight: NALLE does the analysis. The premium product is the plan itself, not access to a human. Human advisors are optional and additive — they present AI output, they don't replace it.
+
+---
+
 ## Development Phases
 
 | Phase | Scope |
 |---|---|
-| 1 | Monorepo scaffold, Supabase schema, auth, profile creation |
-| 2 | Financial intake questionnaire (web + mobile) |
-| 3 | Expense logging with templates |
-| 4 | Dashboard with KPI visualization |
-| 5 | AI CFO bot with streaming chat |
-| 6 | Checklist modules |
-| 7 | Finnish compliance tracker + push notifications |
-| 8 | Report generation (Excel + PDF) |
-| 9 | Consultation booking layer |
+| 1 | Monorepo scaffold, Supabase schema, auth, profile creation ✅ |
+| 2 | Financial intake questionnaire ✅ |
+| 3 | Expense logging with templates ✅ |
+| 4 | Dashboard with KPI visualization ✅ |
+| 5 | AI CFO bot with streaming chat ✅ |
+| 6 | Checklist modules ✅ |
+| 7 | Finnish compliance tracker ✅ |
+| 8 | Report generation (Excel) ✅ |
+| 9 | Premium plans — AI generates personalized financial plans (growth, tax, cash flow); plans gated behind paywall; optional human advisor review layer |
 | 10 | Production hardening, RLS audit, performance |
