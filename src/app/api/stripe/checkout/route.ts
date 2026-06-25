@@ -4,7 +4,15 @@ import Stripe from 'stripe'
 import { NextResponse } from 'next/server'
 
 export async function POST() {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const stripeKey = process.env.STRIPE_SECRET_KEY
+  const priceId = process.env.STRIPE_PREMIUM_PRICE_ID
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+
+  if (!stripeKey || stripeKey === 'sk_test_placeholder') return NextResponse.json({ error: `STRIPE_SECRET_KEY missing or placeholder` }, { status: 500 })
+  if (!priceId || priceId === 'price_placeholder') return NextResponse.json({ error: `STRIPE_PREMIUM_PRICE_ID missing or placeholder` }, { status: 500 })
+  if (!appUrl) return NextResponse.json({ error: `NEXT_PUBLIC_APP_URL missing` }, { status: 500 })
+
+  const stripe = new Stripe(stripeKey)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
