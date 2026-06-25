@@ -14,10 +14,11 @@ export async function POST(request: Request) {
   const { type, answers } = await request.json() as { type: string; answers: Record<string, string> }
 
   const db = createServiceClient()
-  const [{ data: profile }, { data: snapshot }, { data: expenses }] = await Promise.all([
+  const [{ data: profile }, { data: snapshot }, { data: expenses }, { data: invoices }] = await Promise.all([
     db.from('profiles').select('business_name, active_company_id').eq('id', user.id).single(),
     db.from('financial_snapshots').select('*').eq('user_id', user.id).order('snapshot_date', { ascending: false }).limit(1).single(),
     db.from('expense_logs').select('category, amount, description, date').eq('user_id', user.id).order('date', { ascending: false }),
+    db.from('invoices').select('*').eq('user_id', user.id),
   ])
 
   if (!snapshot) return NextResponse.json({ error: 'No financial data found. Complete the intake first.' }, { status: 400 })
@@ -32,6 +33,14 @@ export async function POST(request: Request) {
     return d >= periodStart && d <= periodEnd
   })
 
+  // Filter invoices to the period (paid invoices only — actual cash movement)
+  const allInvoices = invoices ?? []
+  const paidSentInPeriod = allInvoices.filter(i => i.type === 'sent' && i.status === 'paid' && i.paid_date && i.paid_date >= periodStart && i.paid_date <= periodEnd)
+  const paidReceivedInPeriod = allInvoices.filter(i => i.type === 'received' && i.status === 'paid' && i.paid_date && i.paid_date >= periodStart && i.paid_date <= periodEnd)
+  const invoiceRevenue = paidSentInPeriod.reduce((s: number, i) => s + n(i.amount) + n(i.vat_amount), 0)
+  const invoiceExpenses = paidReceivedInPeriod.reduce((s: number, i) => s + n(i.amount) + n(i.vat_amount), 0)
+  const hasInvoices = allInvoices.length > 0
+
   let content: object
   let title: string
   let periodLabel: string
@@ -39,9 +48,10 @@ export async function POST(request: Request) {
   // ── P&L ────────────────────────────────────────────────────────────────
   if (type === 'pnl') {
     const months = Math.max(1, Math.round((new Date(periodEnd).getTime() - new Date(periodStart).getTime()) / (1000 * 60 * 60 * 24 * 30)))
-    const revenue = n(snapshot.monthly_revenue) * months
+    // If user has invoices, snapshot revenue is supplementary; invoice revenue is primary
+    const snapshotRevenue = hasInvoices ? 0 : n(snapshot.monthly_revenue) * months
     const extraRevenue = n(answers.extra_revenue)
-    const totalRevenue = revenue + extraRevenue
+    const totalRevenue = snapshotRevenue + invoiceRevenue + extraRevenue
 
     const expByCategory = periodExpenses.reduce((acc: Record<string, number>, e) => {
       acc[e.category as string] = (acc[e.category as string] ?? 0) + n(e.amount)
@@ -49,7 +59,7 @@ export async function POST(request: Request) {
     }, {})
     const loggedExpenses = Object.values(expByCategory).reduce((s, v) => s + v, 0)
     const extraExpenses = n(answers.extra_expenses)
-    const totalExpenses = loggedExpenses + extraExpenses
+    const totalExpenses = loggedExpenses + invoiceExpenses + extraExpenses
 
     const netProfit = totalRevenue - totalExpenses
     const margin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0'
@@ -63,7 +73,13 @@ export async function POST(request: Request) {
       raw: amt,
       indent: true,
     }))
+    if (invoiceExpenses > 0) expenseRows.push({ label: 'Supplier invoices paid', value: fmt(invoiceExpenses), raw: invoiceExpenses, indent: true })
     if (extraExpenses > 0) expenseRows.push({ label: answers.extra_expenses_desc || 'Other expenses', value: fmt(extraExpenses), raw: extraExpenses, indent: true })
+
+    const revenueRows = []
+    if (snapshotRevenue > 0) revenueRows.push({ label: 'Operating revenue', value: fmt(snapshotRevenue), indent: true })
+    if (invoiceRevenue > 0) revenueRows.push({ label: 'Invoice revenue (paid)', value: fmt(invoiceRevenue), indent: true })
+    if (extraRevenue > 0) revenueRows.push({ label: answers.extra_revenue_desc || 'Other revenue', value: fmt(extraRevenue), indent: true })
 
     content = {
       type: 'pnl', title, business_name: businessName, period: periodLabel,
@@ -71,15 +87,12 @@ export async function POST(request: Request) {
       sections: [
         {
           title: 'Revenue',
-          rows: [
-            { label: 'Operating revenue', value: fmt(revenue), indent: true },
-            ...(extraRevenue > 0 ? [{ label: answers.extra_revenue_desc || 'Other revenue', value: fmt(extraRevenue), indent: true }] : []),
-          ],
+          rows: revenueRows.length > 0 ? revenueRows : [{ label: 'No revenue recorded', value: fmt(0), indent: true }],
           total: { label: 'Total Revenue', value: fmt(totalRevenue), raw: totalRevenue },
         },
         {
           title: 'Expenses',
-          rows: expenseRows,
+          rows: expenseRows.length > 0 ? expenseRows : [{ label: 'No expenses recorded', value: fmt(0), indent: true }],
           total: { label: 'Total Expenses', value: fmt(totalExpenses), raw: totalExpenses },
         },
         {
@@ -157,8 +170,10 @@ export async function POST(request: Request) {
   // ── Cash Flow ───────────────────────────────────────────────────────────
   else if (type === 'cash_flow') {
     const months = Math.max(1, Math.round((new Date(periodEnd).getTime() - new Date(periodStart).getTime()) / (1000 * 60 * 60 * 24 * 30)))
-    const revenue      = n(snapshot.monthly_revenue) * months
-    const opExpenses   = periodExpenses.reduce((s, e) => s + n(e.amount), 0) || n(snapshot.monthly_costs) * months
+    const snapshotRev  = hasInvoices ? 0 : n(snapshot.monthly_revenue) * months
+    const revenue      = snapshotRev + invoiceRevenue
+    const loggedOp     = periodExpenses.reduce((s, e) => s + n(e.amount), 0)
+    const opExpenses   = (loggedOp || (!hasInvoices ? n(snapshot.monthly_costs) * months : 0)) + invoiceExpenses
     const operatingNet = revenue - opExpenses
 
     const assetPurch   = n(answers.asset_purchases)
@@ -183,8 +198,10 @@ export async function POST(request: Request) {
         {
           title: 'Operating Activities',
           rows: [
-            { label: 'Revenue received', value: fmt(revenue), indent: true },
-            { label: 'Expenses paid', value: fmt(-opExpenses), indent: true, negative: true },
+            ...(snapshotRev > 0 ? [{ label: 'Revenue received', value: fmt(snapshotRev), indent: true }] : []),
+            ...(invoiceRevenue > 0 ? [{ label: 'Invoice payments received', value: fmt(invoiceRevenue), indent: true }] : []),
+            ...((loggedOp > 0 || (!hasInvoices && n(snapshot.monthly_costs) * months > 0)) ? [{ label: 'Operating expenses paid', value: fmt(-(opExpenses - invoiceExpenses)), indent: true, negative: true }] : []),
+            ...(invoiceExpenses > 0 ? [{ label: 'Supplier invoices paid', value: fmt(-invoiceExpenses), indent: true, negative: true }] : []),
           ],
           total: { label: 'Net from operations', value: fmt(operatingNet), raw: operatingNet },
         },
