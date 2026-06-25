@@ -9,10 +9,16 @@ export async function POST() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
   if (!stripeKey || stripeKey === 'sk_test_placeholder') return NextResponse.json({ error: `STRIPE_SECRET_KEY missing or placeholder` }, { status: 500 })
-  if (!priceId || priceId === 'price_placeholder') return NextResponse.json({ error: `STRIPE_PREMIUM_PRICE_ID missing or placeholder` }, { status: 500 })
+  if (!priceId || priceId === 'price_placeholder') return NextResponse.json({ error: `STRIPE_PREMIUM_PRICE_ID missing or placeholder. Got: ${priceId}` }, { status: 500 })
   if (!appUrl) return NextResponse.json({ error: `NEXT_PUBLIC_APP_URL missing` }, { status: 500 })
 
-  const stripe = new Stripe(stripeKey, { apiVersion: '2026-06-24.dahlia' })
+  let stripe: Stripe
+  try {
+    stripe = new Stripe(stripeKey, { apiVersion: '2026-06-24.dahlia' })
+  } catch (e) {
+    return NextResponse.json({ error: `Stripe init failed: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,24 +29,31 @@ export async function POST() {
   let customerId = profile?.stripe_customer_id as string | undefined
 
   if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      name: profile?.business_name ?? undefined,
-      metadata: { supabase_user_id: user.id },
-    })
-    customerId = customer.id
-    await db.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
+    try {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: profile?.business_name ?? undefined,
+        metadata: { supabase_user_id: user.id },
+      })
+      customerId = customer.id
+      await db.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
+    } catch (e) {
+      return NextResponse.json({ error: `Create customer failed: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 })
+    }
   }
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    line_items: [{ price: process.env.STRIPE_PREMIUM_PRICE_ID!, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/plans?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/plans?cancelled=true`,
-    metadata: { supabase_user_id: user.id },
-  })
-
-  return NextResponse.json({ url: session.url })
+  try {
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${appUrl}/plans?success=true`,
+      cancel_url: `${appUrl}/plans?cancelled=true`,
+      metadata: { supabase_user_id: user.id },
+    })
+    return NextResponse.json({ url: session.url })
+  } catch (e) {
+    return NextResponse.json({ error: `Create session failed: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 })
+  }
 }
