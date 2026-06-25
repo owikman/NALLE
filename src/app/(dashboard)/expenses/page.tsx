@@ -20,7 +20,7 @@ export default async function ExpensesPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const { data: expenses } = await supabase
-    .from('expense_logs').select('*').eq('user_id', user!.id)
+    .from('expense_logs').select('id,amount,vat_amount,category,description,date,receipt_url,mileage_km,mileage_from,mileage_to').eq('user_id', user!.id)
     .order('date', { ascending: false }).limit(100)
 
   const total = expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0
@@ -104,7 +104,17 @@ export default async function ExpensesPage() {
                   <tr key={e.id} style={{ borderBottom: i < expenses.length - 1 ? '1px solid #f9fafb' : 'none' }}>
                     <td style={{ padding: '14px 20px', fontSize: 13, color: '#6b7280', whiteSpace: 'nowrap' }}>{fmtDate(e.date)}</td>
                     <td style={{ padding: '14px 20px', fontSize: 14, color: '#111827', maxWidth: 280 }}>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{e.description}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description}</span>
+                        {e.mileage_km && (
+                          <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, color: '#1d4ed8', background: '#eff6ff', borderRadius: 99, padding: '2px 8px' }}>
+                            {e.mileage_km} km
+                          </span>
+                        )}
+                        {e.receipt_url && (
+                          <span title="Receipt attached" style={{ flexShrink: 0, fontSize: 14 }}>🧾</span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '14px 20px' }}>
                       <span style={{ background: c.bg, color: c.color, fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 99 }}>
