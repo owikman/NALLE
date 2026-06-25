@@ -41,6 +41,7 @@ export async function POST(request: Request) {
     due_date: body.due_date || null,
     paid_date: body.paid ? body.issue_date : null,
     status: body.paid ? 'paid' : 'unpaid',
+    file_url: body.file_url ?? null,
   }).select('id').single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
