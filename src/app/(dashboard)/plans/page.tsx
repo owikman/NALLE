@@ -126,7 +126,7 @@ export default function PlansPage() {
             <button onClick={handleUpgrade} disabled={upgrading} style={{ background: 'white', color: '#1d4ed8', borderRadius: 14, padding: '14px 28px', fontSize: 15, fontWeight: 700, border: 'none', cursor: upgrading ? 'not-allowed' : 'pointer', opacity: upgrading ? 0.7 : 1 }}>
               {upgrading ? 'Redirecting...' : 'Upgrade to Premium →'}
             </button>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>€29 / month · Cancel anytime</p>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)' }}>€14.90 / month · Cancel anytime</p>
           </div>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 16 }}>Trusted by Finnish entrepreneurs</p>
         </div>
