@@ -201,32 +201,28 @@ export default function IntakePage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
-      {/* Progress bar */}
-      <div className="mb-8">
-        <div className="flex justify-between text-xs text-gray-400 mb-2">
-          <span>Financial intake</span>
-          <span>{step + 1} of {STEPS.length}</span>
+    <div style={{ maxWidth: 560, margin: '0 auto', paddingTop: 40 }}>
+      {/* Progress */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Financial intake</span>
+          <span style={{ fontSize: 12, color: '#9ca3af' }}>{step + 1} / {STEPS.length}</span>
         </div>
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-500 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
+        <div style={{ height: 2, background: '#f3f4f6', borderRadius: 99 }}>
+          <div style={{ height: '100%', background: '#3b82f6', borderRadius: 99, width: `${progress}%`, transition: 'width 0.3s ease' }} />
         </div>
       </div>
 
-      {/* Question card */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
-        <h2 className="text-xl font-semibold text-gray-900 mb-1">
+      {/* Card */}
+      <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f0f0f0', padding: '48px 48px 40px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <h2 style={{ fontSize: 22, fontWeight: 600, color: '#111827', marginBottom: 8, lineHeight: 1.3 }}>
           {currentStep.question}
         </h2>
         {currentStep.subtext && (
-          <p className="text-sm text-gray-400 mb-6">{currentStep.subtext}</p>
+          <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 32, lineHeight: 1.5 }}>{currentStep.subtext}</p>
         )}
-        {!currentStep.subtext && <div className="mb-6" />}
+        {!currentStep.subtext && <div style={{ marginBottom: 32 }} />}
 
-        {/* Input types */}
         {(currentStep.type === 'text') && (
           <input
             autoFocus
@@ -235,7 +231,9 @@ export default function IntakePage() {
             onChange={e => handleAnswer(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={currentStep.placeholder}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 16px', fontSize: 15, outline: 'none', boxSizing: 'border-box', color: '#111827' }}
+            onFocus={e => e.target.style.borderColor = '#3b82f6'}
+            onBlur={e => e.target.style.borderColor = '#e5e7eb'}
           />
         )}
 
@@ -248,13 +246,15 @@ export default function IntakePage() {
             onChange={e => handleAnswer(Number(e.target.value))}
             onKeyDown={handleKeyDown}
             placeholder={currentStep.placeholder}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 16px', fontSize: 15, outline: 'none', boxSizing: 'border-box', color: '#111827' }}
+            onFocus={e => e.target.style.borderColor = '#3b82f6'}
+            onBlur={e => e.target.style.borderColor = '#e5e7eb'}
           />
         )}
 
         {currentStep.type === 'currency' && (
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">€</span>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontWeight: 500, fontSize: 15 }}>€</span>
             <input
               autoFocus
               type="number"
@@ -264,22 +264,26 @@ export default function IntakePage() {
               onChange={e => handleAnswer(Number(e.target.value))}
               onKeyDown={handleKeyDown}
               placeholder={currentStep.placeholder}
-              className="w-full border border-gray-200 rounded-xl pl-8 pr-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 16px 14px 32px', fontSize: 15, outline: 'none', boxSizing: 'border-box', color: '#111827' }}
+              onFocus={e => e.target.style.borderColor = '#3b82f6'}
+              onBlur={e => e.target.style.borderColor = '#e5e7eb'}
             />
           </div>
         )}
 
         {currentStep.type === 'select' && (
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {currentStep.options!.map(opt => (
               <button
                 key={opt.value}
                 onClick={() => handleAnswer(opt.value)}
-                className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
-                  current === opt.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                }`}
+                style={{
+                  width: '100%', textAlign: 'left', padding: '14px 18px', borderRadius: 12,
+                  border: current === opt.value ? '1.5px solid #3b82f6' : '1px solid #e5e7eb',
+                  background: current === opt.value ? '#eff6ff' : 'white',
+                  color: current === opt.value ? '#1d4ed8' : '#374151',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s',
+                }}
               >
                 {opt.label}
               </button>
@@ -288,16 +292,18 @@ export default function IntakePage() {
         )}
 
         {currentStep.type === 'boolean' && (
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: 12 }}>
             {[{ value: true, label: 'Yes' }, { value: false, label: 'No' }].map(opt => (
               <button
                 key={String(opt.value)}
                 onClick={() => handleAnswer(opt.value)}
-                className={`flex-1 py-3 rounded-xl border text-sm font-medium transition-colors ${
-                  current === opt.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                }`}
+                style={{
+                  flex: 1, padding: '14px', borderRadius: 12,
+                  border: current === opt.value ? '1.5px solid #3b82f6' : '1px solid #e5e7eb',
+                  background: current === opt.value ? '#eff6ff' : 'white',
+                  color: current === opt.value ? '#1d4ed8' : '#374151',
+                  fontSize: 15, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s',
+                }}
               >
                 {opt.label}
               </button>
@@ -305,14 +311,14 @@ export default function IntakePage() {
           </div>
         )}
 
-        {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+        {error && <p style={{ marginTop: 12, fontSize: 13, color: '#ef4444' }}>{error}</p>}
 
         {/* Navigation */}
-        <div className="flex gap-3 mt-8">
+        <div style={{ display: 'flex', gap: 12, marginTop: 40 }}>
           {step > 0 && (
             <button
               onClick={handleBack}
-              className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              style={{ padding: '14px 24px', borderRadius: 12, border: '1px solid #e5e7eb', fontSize: 14, fontWeight: 500, color: '#6b7280', background: 'white', cursor: 'pointer' }}
             >
               Back
             </button>
@@ -320,21 +326,23 @@ export default function IntakePage() {
           <button
             onClick={handleNext}
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            style={{ flex: 1, background: '#2563eb', color: 'white', borderRadius: 12, padding: '14px', fontSize: 15, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'opacity 0.15s' }}
           >
-            {loading ? 'Saving...' : step === STEPS.length - 1 ? 'Complete' : 'Next'}
+            {loading ? 'Saving...' : step === STEPS.length - 1 ? 'Complete' : 'Continue →'}
           </button>
         </div>
       </div>
 
       {/* Step dots */}
-      <div className="flex justify-center gap-1.5 mt-6">
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 24 }}>
         {STEPS.map((_, i) => (
           <div
             key={i}
-            className={`h-1.5 rounded-full transition-all ${
-              i === step ? 'w-6 bg-blue-500' : i < step ? 'w-1.5 bg-blue-200' : 'w-1.5 bg-gray-200'
-            }`}
+            style={{
+              height: 4, borderRadius: 99, transition: 'all 0.2s',
+              width: i === step ? 24 : 4,
+              background: i === step ? '#3b82f6' : i < step ? '#bfdbfe' : '#e5e7eb',
+            }}
           />
         ))}
       </div>
