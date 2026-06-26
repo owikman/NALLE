@@ -69,7 +69,7 @@ export default function ChatPage() {
               <h2 style={{ fontSize: 18, fontWeight: 600, color: '#111827', marginBottom: 6 }}>Your AI financial advisor</h2>
               <p style={{ fontSize: 14, color: '#9ca3af' }}>Ask me anything about your numbers</p>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="resp-grid-suggestions" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {SUGGESTIONS.map(s => (
                 <button key={s} onClick={() => sendMessage(s)} style={{ textAlign: 'left', padding: '16px 18px', background: 'white', border: '1px solid #f0f0f0', borderRadius: 14, fontSize: 14, color: '#374151', cursor: 'pointer', lineHeight: 1.4, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
                   {s}

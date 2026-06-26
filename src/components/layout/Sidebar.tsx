@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus, Brain, FileText } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus, Brain, FileText, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
@@ -29,6 +29,7 @@ export default function Sidebar({ email, companies, activeCompanyId }: {
   const router = useRouter()
   const [showCompanies, setShowCompanies] = useState(false)
   const [switching, setSwitching] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const activeCompany = companies.find(c => c.id === activeCompanyId)
 
@@ -37,18 +38,29 @@ export default function Sidebar({ email, companies, activeCompanyId }: {
     await fetch('/api/companies/switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: companyId }) })
     setShowCompanies(false)
     setSwitching(false)
+    setMobileOpen(false)
     router.refresh()
   }
 
-  return (
-    <aside style={{ width: 220, background: 'var(--sidebar-bg)', display: 'flex', flexDirection: 'column', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+  const sidebarInner = (
+    <>
       {/* Logo */}
       <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: companies.length > 0 ? 14 : 0 }}>
-          <div style={{ width: 28, height: 28, background: 'var(--accent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={14} color="white" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: companies.length > 0 ? 14 : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 28, height: 28, background: 'var(--accent)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={14} color="white" />
+            </div>
+            <span style={{ color: 'white', fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>NALLE</span>
           </div>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>NALLE</span>
+          <button
+            onClick={() => setMobileOpen(false)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'rgba(255,255,255,0.5)', display: 'none' }}
+            className="sidebar-close-btn"
+            aria-label="Close menu"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Company switcher */}
@@ -94,7 +106,11 @@ export default function Sidebar({ email, companies, activeCompanyId }: {
         {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== '/' && pathname.startsWith(href))
           return (
-            <Link key={href} href={href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, marginBottom: 2, color: active ? 'var(--sidebar-text-active)' : 'var(--sidebar-text)', background: active ? 'var(--sidebar-active)' : 'transparent', textDecoration: 'none', fontSize: 13, fontWeight: active ? 500 : 400, transition: 'all 0.1s' }}
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setMobileOpen(false)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, marginBottom: 2, color: active ? 'var(--sidebar-text-active)' : 'var(--sidebar-text)', background: active ? 'var(--sidebar-active)' : 'transparent', textDecoration: 'none', fontSize: 13, fontWeight: active ? 500 : 400, transition: 'all 0.1s' }}
               onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover)' }}
               onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
@@ -120,6 +136,43 @@ export default function Sidebar({ email, companies, activeCompanyId }: {
           </button>
         </form>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        className={`nalle-sidebar${mobileOpen ? ' sidebar-mobile-open' : ''}`}
+        style={{ width: 220, background: 'var(--sidebar-bg)', display: 'flex', flexDirection: 'column', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        {sidebarInner}
+      </aside>
+
+      {/* Mobile overlay backdrop */}
+      {mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 49 }}
+        />
+      )}
+
+      {/* Mobile topbar */}
+      <div className="mobile-topbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 26, height: 26, background: 'var(--accent)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Sparkles size={13} color="white" />
+          </div>
+          <span style={{ color: 'white', fontWeight: 700, fontSize: 15, letterSpacing: '-0.3px' }}>NALLE</span>
+        </div>
+        <button
+          onClick={() => setMobileOpen(true)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, color: 'white', display: 'flex', alignItems: 'center' }}
+          aria-label="Open menu"
+        >
+          <Menu size={22} />
+        </button>
+      </div>
+    </>
   )
 }

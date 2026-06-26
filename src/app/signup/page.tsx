@@ -37,7 +37,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: 'var(--bg)' }} className="auth-split">
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         justifyContent: 'center', alignItems: 'center', padding: 48,
@@ -115,7 +115,7 @@ export default function SignupPage() {
         </div>
       </div>
 
-      <div style={{
+      <div className="auth-right-panel" style={{
         width: 480, background: '#111110',
         display: 'flex', flexDirection: 'column',
         justifyContent: 'center', padding: 64,

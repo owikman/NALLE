@@ -35,7 +35,7 @@ export default async function ExpensesPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+      <div className="resp-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Expenses</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>Track and categorize your business costs</p>
@@ -45,7 +45,7 @@ export default async function ExpensesPage() {
         </Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 32 }}>
+      <div className="resp-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 32 }}>
         {[
           { label: 'Total logged', value: fmt(total) },
           { label: 'VAT deductible', value: fmt(totalVat) },
@@ -88,8 +88,8 @@ export default async function ExpensesPage() {
           </Link>
         </div>
       ) : (
-        <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="resp-table-scroll" style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 540 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                 {['Date', 'Description', 'Category', 'VAT', 'Amount'].map((h, i) => (

@@ -15,14 +15,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ])
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div className="dashboard-layout" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Sidebar
         email={user.email ?? ''}
         companies={companies ?? []}
         activeCompanyId={profile?.active_company_id ?? null}
       />
-      <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 32px' }}>
+      <main className="dashboard-main" style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
+        <div className="dashboard-content" style={{ maxWidth: 960, margin: '0 auto', padding: '40px 32px' }}>
           {children}
         </div>
       </main>

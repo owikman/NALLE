@@ -82,7 +82,7 @@ export default function InvoicesPage() {
   return (
     <div style={{ maxWidth: 800 }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+      <div className="resp-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Invoices</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>Track money in and money out</p>
@@ -93,7 +93,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 28 }}>
+      <div className="resp-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 28 }}>
         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <p style={{ fontSize: 12, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Outstanding receivable</p>
           <p style={{ fontSize: 24, fontWeight: 700, color: totalReceivable > 0 ? '#2563eb' : '#111827' }}>{fmt(totalReceivable)}</p>
@@ -137,9 +137,9 @@ export default function InvoicesPage() {
         ) : (
           <>
             {/* Table header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 12, padding: '12px 24px', borderBottom: '1px solid #f3f4f6', background: '#f9fafb' }}>
-              {['Counterparty', 'Amount (incl. VAT)', 'Due date', 'Status', ''].map(h => (
-                <p key={h} style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</p>
+            <div className="invoice-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 12, padding: '12px 24px', borderBottom: '1px solid #f3f4f6', background: '#f9fafb' }}>
+              {(['Counterparty', 'Amount (incl. VAT)', 'Due date', 'Status', ''] as const).map(h => (
+                <p key={h} className={h === 'Due date' ? 'invoice-col-due' : undefined} style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</p>
               ))}
             </div>
 
@@ -148,7 +148,7 @@ export default function InvoicesPage() {
               const total = inv.amount + inv.vat_amount
               const isLast = i === visible.length - 1
               return (
-                <div key={inv.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 12, padding: '16px 24px', borderBottom: isLast ? 'none' : '1px solid #f9fafb', alignItems: 'center', opacity: acting === inv.id ? 0.5 : 1 }}>
+                <div key={inv.id} className="invoice-grid-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 12, padding: '16px 24px', borderBottom: isLast ? 'none' : '1px solid #f9fafb', alignItems: 'center', opacity: acting === inv.id ? 0.5 : 1 }}>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{inv.counterparty}</p>
                     {inv.invoice_number && <p style={{ fontSize: 12, color: '#9ca3af' }}>#{inv.invoice_number}</p>}
@@ -158,7 +158,7 @@ export default function InvoicesPage() {
                     <p style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{fmt(total)}</p>
                     {inv.vat_amount > 0 && <p style={{ fontSize: 11, color: '#9ca3af' }}>net {fmt(inv.amount)} + VAT {fmt(inv.vat_amount)}</p>}
                   </div>
-                  <p style={{ fontSize: 13, color: overdue ? '#dc2626' : '#6b7280' }}>
+                  <p className="invoice-col-due" style={{ fontSize: 13, color: overdue ? '#dc2626' : '#6b7280' }}>
                     {inv.due_date ? new Date(inv.due_date).toLocaleDateString('fi-FI') : '—'}
                     {overdue && <span style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#dc2626' }}>Overdue</span>}
                   </p>

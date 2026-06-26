@@ -47,3 +47,87 @@ body {
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ─── Mobile navigation ─── */
+.mobile-topbar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #111110;
+  height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+/* ─── Responsive helpers ─── */
+@media (max-width: 768px) {
+  /* Sidebar becomes a fixed overlay drawer */
+  .nalle-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+  .nalle-sidebar.sidebar-mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  /* Mobile topbar visible */
+  .mobile-topbar { display: flex; }
+
+  /* Dashboard layout stacks vertically */
+  .dashboard-layout {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 100dvh;
+    overflow: visible !important;
+  }
+  .dashboard-main {
+    overflow-y: visible !important;
+    height: auto !important;
+  }
+  .dashboard-content {
+    padding: 20px 16px !important;
+  }
+
+  /* Grid breakpoints */
+  .resp-grid-3 { grid-template-columns: 1fr !important; }
+  .resp-grid-2 { grid-template-columns: 1fr !important; }
+  .resp-grid-4 { grid-template-columns: 1fr 1fr !important; }
+  .resp-grid-charts { grid-template-columns: 1fr !important; }
+  .resp-grid-suggestions { grid-template-columns: 1fr !important; }
+
+  /* Page headers stack */
+  .resp-page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  /* Tables scroll horizontally */
+  .resp-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Invoice — hide due date column, adjust grid */
+  .invoice-col-due { display: none !important; }
+  .invoice-grid-row { grid-template-columns: 2fr 1fr 1fr auto !important; }
+
+  /* Sidebar close button visible in drawer */
+  .sidebar-close-btn { display: block !important; }
+
+  /* Auth pages — hide decorative right panel */
+  .auth-right-panel { display: none !important; }
+
+  /* Advisor run button wraps to new row */
+  .advisor-card-header { flex-wrap: wrap !important; }
+  .advisor-run-btn { width: 100% !important; margin-top: 12px; }
+}

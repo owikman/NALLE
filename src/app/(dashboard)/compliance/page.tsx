@@ -76,7 +76,7 @@ export default function CompliancePage() {
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+      <div className="resp-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Compliance</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>Finnish business obligations tracker</p>
@@ -88,7 +88,7 @@ export default function CompliancePage() {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
+      <div className="resp-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
         {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
           const count = obligations.filter(o => o.status === status).length
           return (

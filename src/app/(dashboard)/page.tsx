@@ -76,7 +76,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+      <div className="resp-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: '#111827', marginBottom: 4 }}>{profile.business_name ?? 'Dashboard'}</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>Financial overview</p>
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+      <div className="resp-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
         {kpis.map(kpi => (
           <div key={kpi.label} style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: '22px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <p style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>{kpi.label}</p>
@@ -96,7 +96,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 16 }}>
+      <div className="resp-grid-charts" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 16 }}>
         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <h2 style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Revenue vs Costs</h2>
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="resp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <h2 style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Expenses by category</h2>

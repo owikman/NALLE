@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div style={{
       minHeight: '100vh', display: 'flex',
       background: 'var(--bg)',
-    }}>
+    }} className="auth-split">
       {/* Left panel */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
@@ -141,7 +141,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel */}
-      <div style={{
+      <div className="auth-right-panel" style={{
         width: 480, background: '#111110',
         display: 'flex', flexDirection: 'column',
         justifyContent: 'center', padding: 64,

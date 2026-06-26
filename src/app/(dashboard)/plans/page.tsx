@@ -68,7 +68,7 @@ export default function PlansPage() {
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+      <div className="resp-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Financial Plans</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>AI-generated roadmap for your business</p>
@@ -90,7 +90,7 @@ export default function PlansPage() {
             Built for Finnish entrepreneurs — tax-smart, compliance-aware, and tailored to your exact numbers.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
+          <div className="resp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
             {[
               { icon: '📊', title: 'AI Financial Plan', desc: 'Personalized growth roadmap and 3–6 month action plan generated from your data' },
               { icon: '🧠', title: 'Tax Strategy', desc: 'Finnish-specific optimization — YEL, VAT, and salary vs. dividend split for OY owners' },
@@ -106,7 +106,7 @@ export default function PlansPage() {
           </div>
 
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 24, marginBottom: 28 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="resp-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
                 'Unlimited AI CFO conversations',
                 'Advanced financial reports',

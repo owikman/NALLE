@@ -32,7 +32,7 @@ export default async function ReportsPage() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+      <div className="resp-page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Reports</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>Create and view your financial reports</p>
