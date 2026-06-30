@@ -3,54 +3,83 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-type ReportType = 'pnl' | 'balance_sheet' | 'cash_flow'
+type ReportType = 'pnl' | 'balance_sheet' | 'cash_flow' | 'form_6b'
 type Mode = 'simple' | 'advanced'
 
 const REPORT_TYPES = [
-  { id: 'pnl' as ReportType, icon: '📊', title: 'Profit & Loss', desc: 'Revenue, expenses, and net profit for a period' },
-  { id: 'balance_sheet' as ReportType, icon: '⚖️', title: 'Balance Sheet', desc: 'Assets, liabilities, and owner equity at a point in time' },
-  { id: 'cash_flow' as ReportType, icon: '💧', title: 'Cash Flow', desc: 'How cash moved through the business over a period' },
+  { id: 'pnl' as ReportType,           icon: '📊', title: 'Profit & Loss',    desc: 'Revenue, expenses, and net profit for a period' },
+  { id: 'balance_sheet' as ReportType, icon: '⚖️', title: 'Balance Sheet',    desc: 'Assets, liabilities, and owner equity at a point in time' },
+  { id: 'cash_flow' as ReportType,     icon: '💧', title: 'Cash Flow',        desc: 'How cash moved through the business over a period' },
+  { id: 'form_6b' as ReportType,       icon: '🏛️', title: '6B Veroilmoitus', desc: 'Finnish corporate income tax return — for OY and cooperatives' },
 ]
-
-// ── Simple mode: step-by-step ────────────────────────────────────────────────
 
 interface Step {
   key: string
   question: string
   subtext?: string
   howToFind?: string
-  type: 'date' | 'currency' | 'text'
+  type: 'date' | 'currency' | 'text' | 'number'
   placeholder?: string
   for: ReportType[]
 }
 
 const today = new Date().toISOString().split('T')[0]!
 const firstOfYear = `${new Date().getFullYear()}-01-01`
+const lastYearStart = `${new Date().getFullYear() - 1}-01-01`
+const lastYearEnd   = `${new Date().getFullYear() - 1}-12-31`
 
 const ALL_STEPS: Step[] = [
-  { key: 'period_start', question: 'What date does this report start from?', subtext: 'The first day you want the report to cover', howToFind: 'Use the start of your financial year, a quarter, or any date that makes sense for your business', type: 'date', for: ['pnl', 'cash_flow'] },
-  { key: 'period_end', question: 'What date does it end?', subtext: 'The last day included in the report', howToFind: 'Usually today, or the last day of a month or quarter', type: 'date', for: ['pnl', 'cash_flow'] },
-  { key: 'as_of_date', question: 'What date should the balance sheet be as of?', subtext: 'A snapshot of your finances on this exact date', howToFind: 'Usually today, or the last day of your financial year', type: 'date', for: ['balance_sheet'] },
-  { key: 'extra_revenue', question: 'Any income not already tracked in NALLE? (€)', subtext: 'Leave at 0 if all your revenue is logged here', howToFind: 'Check your bank statements for cash payments, grants, or one-off income not invoiced through NALLE', type: 'currency', placeholder: '0', for: ['pnl'] },
-  { key: 'extra_revenue_desc', question: 'What was this income from?', subtext: 'A short description so it shows correctly in the report', type: 'text', placeholder: 'e.g. Government grant, cash sale', for: ['pnl'] },
-  { key: 'extra_expenses', question: 'Any expenses not logged in NALLE? (€)', subtext: 'Leave at 0 if all your costs are tracked here', howToFind: 'Check bank statements for business purchases made on a personal card, or cash payments', type: 'currency', placeholder: '0', for: ['pnl'] },
-  { key: 'extra_expenses_desc', question: 'What were these expenses for?', subtext: 'A short description so it shows correctly in the report', type: 'text', placeholder: 'e.g. Office supplies paid in cash', for: ['pnl'] },
-  { key: 'fixed_assets', question: "What's the current value of your equipment and assets? (€)", subtext: 'Machinery, vehicles, computers, furniture — at book value', howToFind: "Use the book value from your last tax return, or ask your accountant. If unsure, estimate what you could sell them for today", type: 'currency', placeholder: '0', for: ['balance_sheet'] },
-  { key: 'other_assets', question: 'Any other assets to include? (€)', subtext: 'Inventory, deposits, prepaid expenses — leave at 0 if none', howToFind: "Check if you have paid-in-advance costs like insurance, rent deposits, or stock you haven't sold yet", type: 'currency', placeholder: '0', for: ['balance_sheet'] },
-  { key: 'loans', question: 'How much do you owe in loans and credit? (€)', howToFind: 'Log in to your bank and add up all outstanding loan balances, overdraft, and hire purchase agreements', type: 'currency', placeholder: '0', for: ['balance_sheet'] },
-  { key: 'other_liabilities', question: 'Any other money you owe? (€)', subtext: 'Unpaid tax, accrued costs — leave at 0 if unsure', howToFind: "Check OmaVero for any outstanding tax debt, and any supplier invoices you haven't paid yet", type: 'currency', placeholder: '0', for: ['balance_sheet'] },
-  { key: 'owner_equity', question: "How much of your own money have you put into the business? (€)", howToFind: "This is the capital you invested when starting the business, plus any additional money you've put in since", type: 'currency', placeholder: '0', for: ['balance_sheet'] },
-  { key: 'asset_purchases', question: 'Did you buy any equipment or assets during this period? (€)', subtext: 'Leave at 0 if none', howToFind: 'Look for large one-off purchases in your bank statements — computers, vehicles, machinery', type: 'currency', placeholder: '0', for: ['cash_flow'] },
-  { key: 'asset_sales', question: 'Did you sell any business assets? (€)', subtext: 'Leave at 0 if none', howToFind: 'Any equipment, vehicles, or property you sold during this period', type: 'currency', placeholder: '0', for: ['cash_flow'] },
-  { key: 'loans_received', question: 'Did you receive any loans or external funding? (€)', subtext: 'Leave at 0 if none', howToFind: 'Check your bank for large credit transfers from banks or investors', type: 'currency', placeholder: '0', for: ['cash_flow'] },
-  { key: 'loans_repaid', question: 'How much did you repay on loans? (€)', subtext: 'Leave at 0 if none', howToFind: 'Add up all loan repayment transactions from your bank statements for this period', type: 'currency', placeholder: '0', for: ['cash_flow'] },
-  { key: 'owner_drawings', question: 'Did you withdraw money from the business for personal use? (€)', subtext: 'Leave at 0 if none', howToFind: 'For toiminimi: transfers to your personal bank account. For OY: dividends paid to yourself', type: 'currency', placeholder: '0', for: ['cash_flow'] },
+  // ── P&L / Cash Flow ──────────────────────────────────────────────────────
+  { key: 'period_start',     type: 'date',     question: 'What date does this report start from?',                                subtext: 'The first day you want the report to cover',                         howToFind: 'Use the start of your financial year, a quarter, or any date that makes sense for your business',                                                                                                 for: ['pnl', 'cash_flow'] },
+  { key: 'period_end',       type: 'date',     question: 'What date does it end?',                                                subtext: 'The last day included in the report',                                howToFind: 'Usually today, or the last day of a month or quarter',                                                                                                                                           for: ['pnl', 'cash_flow'] },
+  { key: 'as_of_date',       type: 'date',     question: 'What date should the balance sheet be as of?',                          subtext: 'A snapshot of your finances on this exact date',                    howToFind: 'Usually today, or the last day of your financial year',                                                                                                                                          for: ['balance_sheet'] },
+  { key: 'extra_revenue',    type: 'currency', question: 'Any income not already tracked in NALLE? (€)',                          subtext: 'Leave at 0 if all your revenue is logged here',                     howToFind: 'Check your bank statements for cash payments, grants, or one-off income not invoiced through NALLE',                                         placeholder: '0',                                   for: ['pnl'] },
+  { key: 'extra_revenue_desc', type: 'text',   question: 'What was this income from?',                                            subtext: 'A short description so it shows correctly in the report',           placeholder: 'e.g. Government grant, cash sale',                                                                                                                                                     for: ['pnl'] },
+  { key: 'extra_expenses',   type: 'currency', question: 'Any expenses not logged in NALLE? (€)',                                 subtext: 'Leave at 0 if all your costs are tracked here',                     howToFind: 'Check bank statements for business purchases made on a personal card, or cash payments',                                                    placeholder: '0',                                   for: ['pnl'] },
+  { key: 'extra_expenses_desc', type: 'text',  question: 'What were these expenses for?',                                         subtext: 'A short description so it shows correctly in the report',           placeholder: 'e.g. Office supplies paid in cash',                                                                                                                                                    for: ['pnl'] },
+  { key: 'fixed_assets',     type: 'currency', question: "What's the current value of your equipment and assets? (€)",            subtext: 'Machinery, vehicles, computers, furniture — at book value',         howToFind: "Use the book value from your last tax return, or ask your accountant. If unsure, estimate what you could sell them for today",                placeholder: '0',                                   for: ['balance_sheet'] },
+  { key: 'other_assets',     type: 'currency', question: 'Any other assets to include? (€)',                                      subtext: 'Inventory, deposits, prepaid expenses — leave at 0 if none',        howToFind: "Check if you have paid-in-advance costs like insurance, rent deposits, or stock you haven't sold yet",                                       placeholder: '0',                                   for: ['balance_sheet'] },
+  { key: 'loans',            type: 'currency', question: 'How much do you owe in loans and credit? (€)',                          howToFind: 'Log in to your bank and add up all outstanding loan balances, overdraft, and hire purchase agreements',                                                                                                                                                                 placeholder: '0', for: ['balance_sheet'] },
+  { key: 'other_liabilities', type: 'currency', question: 'Any other money you owe? (€)',                                         subtext: 'Unpaid tax, accrued costs — leave at 0 if unsure',                  howToFind: "Check OmaVero for any outstanding tax debt, and any supplier invoices you haven't paid yet",                                                  placeholder: '0',                                   for: ['balance_sheet'] },
+  { key: 'owner_equity',     type: 'currency', question: "How much of your own money have you put into the business? (€)",        howToFind: "This is the capital you invested when starting the business, plus any additional money you've put in since",                                                                                                                                                           placeholder: '0', for: ['balance_sheet'] },
+  { key: 'asset_purchases',  type: 'currency', question: 'Did you buy any equipment or assets during this period? (€)',           subtext: 'Leave at 0 if none',                                                howToFind: 'Look for large one-off purchases in your bank statements — computers, vehicles, machinery',                                                  placeholder: '0',                                   for: ['cash_flow'] },
+  { key: 'asset_sales',      type: 'currency', question: 'Did you sell any business assets? (€)',                                 subtext: 'Leave at 0 if none',                                                howToFind: 'Any equipment, vehicles, or property you sold during this period',                                                                         placeholder: '0',                                   for: ['cash_flow'] },
+  { key: 'loans_received',   type: 'currency', question: 'Did you receive any loans or external funding? (€)',                    subtext: 'Leave at 0 if none',                                                howToFind: 'Check your bank for large credit transfers from banks or investors',                                                                        placeholder: '0',                                   for: ['cash_flow'] },
+  { key: 'loans_repaid',     type: 'currency', question: 'How much did you repay on loans? (€)',                                  subtext: 'Leave at 0 if none',                                                howToFind: 'Add up all loan repayment transactions from your bank statements for this period',                                                          placeholder: '0',                                   for: ['cash_flow'] },
+  { key: 'owner_drawings',   type: 'currency', question: 'Did you withdraw money from the business for personal use? (€)',        subtext: 'Leave at 0 if none',                                                howToFind: 'For toiminimi: transfers to your personal bank account. For OY: dividends paid to yourself',                                                  placeholder: '0',                                   for: ['cash_flow'] },
+
+  // ── 6B Veroilmoitus ──────────────────────────────────────────────────────
+  { key: 'ytunnus',          type: 'text',     question: 'Y-tunnus (Business ID)',                                                subtext: "Your company's Finnish Business ID",                                 howToFind: 'Find it at ytj.fi, on your trade register extract, or any official tax document',                                                                placeholder: '1234567-8',                            for: ['form_6b'] },
+  { key: 'period_start',     type: 'date',     question: 'Tilikauden alkupäivä',                                                  subtext: 'First day of the accounting period',                                howToFind: 'Typically 1.1. of the fiscal year',                                                                                                                                                             for: ['form_6b'] },
+  { key: 'period_end',       type: 'date',     question: 'Tilikauden loppupäivä',                                                 subtext: 'Last day of the accounting period',                                 howToFind: 'Typically 31.12. of the fiscal year',                                                                                                                                                           for: ['form_6b'] },
+  { key: 'net_sales_extra',  type: 'currency', question: 'Lisätulot NALLE:n ulkopuolelta (€)',                                    subtext: 'Revenue NOT in NALLE — cash sales, direct transfers. Leave 0 if all income is tracked', howToFind: 'Check your bank statements for payments not linked to any NALLE invoice',                                                               placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'other_income',     type: 'currency', question: 'Muut liiketoiminnan tuotot — kenttä 310 (€)',                           subtext: 'Government grants, asset sale gains. Leave 0 if none',             howToFind: 'Business Finland grants, subsidies, gains from selling fixed assets during the period',                                                      placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'wages',            type: 'currency', question: 'Palkat ja henkilöstökulut yhteensä — kenttä 320 (€)',                   subtext: 'Total staff costs including employer social security. Leave 0 if none', howToFind: "All salaries paid + employer's TyEL + social security contributions. Get from your payroll records or accounting system.",                placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'depreciation',     type: 'currency', question: 'Suunnitelman mukaiset poistot — kenttä 340 (€)',                        subtext: 'Planned depreciation on fixed assets. Leave 0 if none',             howToFind: 'Find "poistot" in your P&L. If you have no fixed assets or have not done depreciation yet, enter 0.',                                        placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'entertainment',    type: 'currency', question: 'Edustuskulut (koko määrä) — kenttä 352 (€)',                            subtext: 'Client entertainment expenses — enter full amount, only 50% is deductible', howToFind: 'Client dinners, corporate gifts, event tickets for clients. Enter the total — NALLE calculates the 50% deduction automatically.',      placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'interest_expense', type: 'currency', question: 'Korkokulut — kenttä 360 (€)',                                           subtext: 'Interest paid on business loans. Leave 0 if no loans',              howToFind: 'Find loan interest charges in your bank statements. Do NOT include principal repayments — only the interest portion.',                        placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'prev_losses',      type: 'currency', question: 'Aiemmilta vuosilta vahvistetut tappiot (€)',                            subtext: 'Confirmed carry-forward losses from previous tax years. Leave 0 if none', howToFind: 'Check your previous verotuspäätös in OmaVero under "vahvistetut tappiot". These are losses the tax authority has confirmed.',           placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'fixed_assets',     type: 'currency', question: 'Käyttöomaisuus kirjanpitoarvo — kenttä 620 (€)',                        subtext: 'Net book value of fixed assets at the end of the period. Leave 0 if none', howToFind: 'From your balance sheet: machinery, equipment, vehicles after subtracting accumulated depreciation.',                                      placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'inventory',        type: 'currency', question: 'Vaihto-omaisuus — kenttä 660 (€)',                                      subtext: 'Stock, raw materials, work-in-progress. Leave 0 for service businesses', howToFind: 'Value of unsold goods or raw materials. Most service businesses enter 0 here.',                                                           placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'loans',            type: 'currency', question: 'Korolliset velat yhteensä — kenttä 730 (€)',                            subtext: 'Total business loans and credit (excluding accounts payable). Leave 0 if none', howToFind: 'Bank loans + credit lines + hire purchase balances. Log in to your bank to check outstanding balances.',                            placeholder: '0',                                   for: ['form_6b'] },
+  { key: 'share_capital',    type: 'currency', question: 'Osakepääoma — kenttä 760 (€)',                                          subtext: 'Registered share capital of the company',                           howToFind: 'Find in your kaupparekisteriote (trade register extract) at ytj.fi. The legal minimum for OY is €2,500.',                                     placeholder: '2500',                                for: ['form_6b'] },
+  { key: 'sh1_name',         type: 'text',     question: 'Osakkaan 1 nimi',                                                       subtext: 'Full name of the primary shareholder',                              placeholder: 'Matti Meikäläinen',                                                                                                                                                                            for: ['form_6b'] },
+  { key: 'sh1_id',           type: 'text',     question: 'Osakkaan 1 henkilötunnus tai Y-tunnus',                                 subtext: 'Personal ID (hetu) or Business ID of this shareholder',             howToFind: 'Personal identity code format: DDMMYY-XXXX (e.g. 010190-123A)',                                                                                   placeholder: '010190-123A',                         for: ['form_6b'] },
+  { key: 'sh1_shares',       type: 'number',   question: 'Osakkaan 1 osakkeiden lukumäärä',                                       subtext: 'Number of shares owned by this shareholder',                        placeholder: '100',                                                                                                                                                                                         for: ['form_6b'] },
+  { key: 'total_shares',     type: 'number',   question: 'Osakkeiden kokonaismäärä',                                              subtext: 'Total number of shares in the company (all shareholders combined)', placeholder: '100',                                                                                                                                                                                         for: ['form_6b'] },
+  { key: 'dividends_paid',   type: 'currency', question: 'Maksetut osingot tilikauden aikana (€)',                                subtext: 'Total gross dividends distributed during this period. Leave 0 if none', howToFind: 'The total dividend amount decided and paid during this accounting period. Check your board meeting minutes.',                               placeholder: '0',                                   for: ['form_6b'] },
 ]
 
 const DEFAULTS: Record<string, string> = {
-  period_start: firstOfYear,
-  period_end: today,
-  as_of_date: today,
+  period_start: firstOfYear, period_end: today, as_of_date: today,
+}
+
+const SIX_B_DEFAULTS: Record<string, string> = {
+  period_start: lastYearStart, period_end: lastYearEnd,
+  net_sales_extra: '0', other_income: '0', wages: '0', depreciation: '0',
+  entertainment: '0', interest_expense: '0', prev_losses: '0',
+  fixed_assets: '0', inventory: '0', loans: '0', share_capital: '2500',
+  sh1_shares: '100', total_shares: '100', dividends_paid: '0',
 }
 
 const inputStyle = {
@@ -77,16 +106,13 @@ function NewReportForm() {
   const preType = searchParams.get('type') as ReportType | null
 
   const [type, setType] = useState<ReportType | null>(preType)
-  const [mode, setMode] = useState<Mode | null>(null)
+  const [mode, setMode] = useState<Mode | null>(preType === 'form_6b' ? 'simple' : null)
 
-  // Simple mode state
   const [step, setStep] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, string>>(DEFAULTS)
+  const [answers, setAnswers] = useState<Record<string, string>>(preType === 'form_6b' ? SIX_B_DEFAULTS : DEFAULTS)
   const [current, setCurrent] = useState<string>('')
 
-  // Advanced mode state
   const [adv, setAdv] = useState<Record<string, string>>(DEFAULTS)
-
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -94,12 +120,18 @@ function NewReportForm() {
   const currentStep = steps[step]
 
   function pickType(chosen: ReportType) {
+    const is6b = chosen === 'form_6b'
+    const defs = is6b ? SIX_B_DEFAULTS : DEFAULTS
     setType(chosen)
-    setMode(null)
+    setMode(is6b ? 'simple' : null)
     setStep(0)
-    setAnswers(DEFAULTS)
-    setAdv(DEFAULTS)
+    setAnswers(defs)
+    setAdv(defs)
     setError(null)
+    if (is6b) {
+      const first = ALL_STEPS.filter(s => s.for.includes('form_6b'))[0]
+      setCurrent(defs[first?.key ?? ''] ?? first?.placeholder ?? '')
+    }
   }
 
   function pickMode(chosen: Mode) {
@@ -111,14 +143,14 @@ function NewReportForm() {
     setError(null)
   }
 
-  // ── Simple navigation ────────────────────────────────────────────────────
   function handleNext() {
     if (!currentStep) return
     const committed = { ...answers, [currentStep.key]: current }
     setAnswers(committed)
     if (step < steps.length - 1) {
       const nextStep = steps[step + 1]!
-      setCurrent(committed[nextStep.key] ?? DEFAULTS[nextStep.key] ?? '')
+      const defs = type === 'form_6b' ? SIX_B_DEFAULTS : DEFAULTS
+      setCurrent(committed[nextStep.key] ?? defs[nextStep.key] ?? nextStep.placeholder ?? '')
       setStep(s => s + 1)
     } else {
       submit(committed)
@@ -126,10 +158,15 @@ function NewReportForm() {
   }
 
   function handleBack() {
-    if (step === 0) { setMode(null); return }
+    if (step === 0) {
+      if (type === 'form_6b') { setType(null); setMode(null) }
+      else { setMode(null) }
+      return
+    }
+    const defs = type === 'form_6b' ? SIX_B_DEFAULTS : DEFAULTS
     const prevStep = steps[step - 1]!
     setAnswers(a => ({ ...a, [currentStep!.key]: current }))
-    setCurrent(answers[prevStep.key] ?? DEFAULTS[prevStep.key] ?? '')
+    setCurrent(answers[prevStep.key] ?? defs[prevStep.key] ?? prevStep.placeholder ?? '')
     setStep(s => s - 1)
   }
 
@@ -137,7 +174,6 @@ function NewReportForm() {
     if (e.key === 'Enter') { e.preventDefault(); handleNext() }
   }
 
-  // ── Submit ───────────────────────────────────────────────────────────────
   async function submit(finalAnswers: Record<string, string>) {
     if (!type) return
     setLoading(true); setError(null)
@@ -170,13 +206,16 @@ function NewReportForm() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {REPORT_TYPES.map(r => (
             <button key={r.id} onClick={() => pickType(r.id)}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: 18, textAlign: 'left', background: 'white', border: '1px solid #f0f0f0', borderRadius: 16, padding: '22px 24px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', width: '100%' }}
+              style={{ display: 'flex', alignItems: 'flex-start', gap: 18, textAlign: 'left', background: 'white', border: r.id === 'form_6b' ? '2px solid #dbeafe' : '1px solid #f0f0f0', borderRadius: 16, padding: '22px 24px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', width: '100%' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = '#93c5fd')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = '#f0f0f0')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = r.id === 'form_6b' ? '#dbeafe' : '#f0f0f0')}
             >
               <span style={{ fontSize: 28 }}>{r.icon}</span>
               <div>
-                <p style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 4 }}>{r.title}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{r.title}</p>
+                  {r.id === 'form_6b' && <span style={{ fontSize: 10, fontWeight: 700, background: '#eff6ff', color: '#2563eb', borderRadius: 99, padding: '2px 8px', letterSpacing: '0.05em' }}>OY / OSUUSKUNTA</span>}
+                </div>
                 <p style={{ fontSize: 14, color: '#9ca3af' }}>{r.desc}</p>
               </div>
               <span style={{ marginLeft: 'auto', color: '#9ca3af', fontSize: 18, alignSelf: 'center' }}>→</span>
@@ -189,7 +228,7 @@ function NewReportForm() {
 
   const selectedType = REPORT_TYPES.find(r => r.id === type)!
 
-  // ── Mode picker ──────────────────────────────────────────────────────────
+  // ── Mode picker (skip for form_6b) ───────────────────────────────────────
   if (!mode) {
     return (
       <div style={{ maxWidth: 560 }}>
@@ -228,11 +267,12 @@ function NewReportForm() {
     )
   }
 
-  // ── Simple wizard ────────────────────────────────────────────────────────
+  // ── Simple wizard (all types, including form_6b) ─────────────────────────
   if (mode === 'simple') {
     if (!currentStep) return null
-    const progress = (step / steps.length) * 100
+    const progress = ((step + 1) / steps.length) * 100
     const isLast = step === steps.length - 1
+    const is6b = type === 'form_6b'
 
     return (
       <div style={{ maxWidth: 520 }}>
@@ -240,12 +280,12 @@ function NewReportForm() {
           <button onClick={handleBack} style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: 10, padding: '8px 14px', fontSize: 18, cursor: 'pointer', color: '#6b7280' }}>←</button>
           <div>
             <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 2 }}>{selectedType.icon} {selectedType.title}</p>
-            <p style={{ fontSize: 13, color: '#9ca3af' }}>Step {step + 1} of {steps.length}</p>
+            <p style={{ fontSize: 13, color: '#9ca3af' }}>Kysymys {step + 1} / {steps.length}</p>
           </div>
         </div>
 
         <div style={{ height: 4, background: '#f0f0f0', borderRadius: 99, marginBottom: 28, overflow: 'hidden' }}>
-          <div style={{ height: '100%', background: '#2563eb', borderRadius: 99, width: `${progress}%`, transition: 'width 0.3s ease' }} />
+          <div style={{ height: '100%', background: is6b ? '#2563eb' : '#2563eb', borderRadius: 99, width: `${progress}%`, transition: 'width 0.3s ease' }} />
         </div>
 
         <div style={{ background: 'white', borderRadius: 20, border: '1px solid #f0f0f0', padding: '36px 32px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
@@ -273,10 +313,15 @@ function NewReportForm() {
               placeholder={currentStep.placeholder ?? ''} style={{ ...inputStyle, fontSize: 16 }}
               onFocus={e => (e.target.style.borderColor = '#3b82f6')} onBlur={e => (e.target.style.borderColor = '#e5e7eb')} autoFocus />
           )}
+          {currentStep.type === 'number' && (
+            <input type="number" min="0" step="1" value={current} onChange={e => setCurrent(e.target.value)} onKeyDown={handleKeyDown}
+              placeholder={currentStep.placeholder ?? '0'} style={{ ...inputStyle, fontSize: 16 }}
+              onFocus={e => (e.target.style.borderColor = '#3b82f6')} onBlur={e => (e.target.style.borderColor = '#e5e7eb')} autoFocus />
+          )}
 
           {currentStep.howToFind && (
             <div style={{ marginTop: 14, background: '#f9fafb', border: '1px solid #f0f0f0', borderRadius: 10, padding: '10px 14px' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>💡 How to find this</p>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>💡 {is6b ? 'Mistä löydät tämän' : 'How to find this'}</p>
               <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>{currentStep.howToFind}</p>
             </div>
           )}
@@ -285,7 +330,11 @@ function NewReportForm() {
 
           <button onClick={handleNext} disabled={loading}
             style={{ marginTop: 28, width: '100%', background: '#2563eb', color: 'white', borderRadius: 14, padding: '15px', fontSize: 15, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            {loading ? <><span style={{ width: 14, height: 14, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block' }} /> Creating report...</> : isLast ? `Create ${selectedType.title} →` : 'Continue →'}
+            {loading
+              ? <><span style={{ width: 14, height: 14, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block' }} /> {is6b ? 'Luodaan...' : 'Creating report...'}</>
+              : isLast
+                ? is6b ? 'Luo 6B veroilmoitus →' : `Create ${selectedType.title} →`
+                : 'Jatka →'}
           </button>
         </div>
 
@@ -296,13 +345,13 @@ function NewReportForm() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 12, color: '#d1d5db', marginTop: 16 }}>
-          Your revenue, expenses, and bank data from NALLE are included automatically
+          {is6b ? 'Tulo- ja kulutiedot haetaan automaattisesti NALLE:sta' : 'Your revenue, expenses, and bank data from NALLE are included automatically'}
         </p>
       </div>
     )
   }
 
-  // ── Advanced form ────────────────────────────────────────────────────────
+  // ── Advanced form (P&L, Balance Sheet, Cash Flow only) ───────────────────
   function setA(key: string, val: string) { setAdv(a => ({ ...a, [key]: val })) }
 
   return (
