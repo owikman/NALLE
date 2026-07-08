@@ -24,8 +24,8 @@ export async function POST(request: Request) {
   if (!snapshot) return NextResponse.json({ error: 'No financial data found. Complete the intake first.' }, { status: 400 })
 
   const businessName = profile?.business_name ?? 'My Business'
-  const periodStart = answers.period_start ?? answers.as_of_date ?? snapshot.snapshot_date
-  const periodEnd   = answers.period_end   ?? answers.as_of_date ?? new Date().toISOString().split('T')[0]!
+  let periodStart = answers.period_start ?? answers.as_of_date ?? snapshot.snapshot_date
+  let periodEnd   = answers.period_end   ?? answers.as_of_date ?? new Date().toISOString().split('T')[0]!
 
   // Filter expenses to the period for P&L and Cash Flow
   const periodExpenses = (expenses ?? []).filter(e => {
@@ -41,9 +41,9 @@ export async function POST(request: Request) {
   const invoiceExpenses = paidReceivedInPeriod.reduce((s: number, i) => s + n(i.amount) + n(i.vat_amount), 0)
   const hasInvoices = allInvoices.length > 0
 
-  let content: object
-  let title: string
-  let periodLabel: string
+  let content: object = {}
+  let title = ''
+  let periodLabel = ''
 
   // ── P&L ────────────────────────────────────────────────────────────────
   if (type === 'pnl') {
@@ -231,6 +231,119 @@ export async function POST(request: Request) {
           ],
         },
       ],
+    }
+  // ── 6B Veroilmoitus ─────────────────────────────────────────────────────
+  } else if (type === 'form_6b') {
+    const ps = answers.period_start ?? `${new Date().getFullYear() - 1}-01-01`
+    const pe = answers.period_end   ?? `${new Date().getFullYear() - 1}-12-31`
+
+    // Revenue: NALLE invoices + snapshot fallback + user additions
+    const months6b = Math.max(1, Math.round((new Date(pe).getTime() - new Date(ps).getTime()) / (1000 * 60 * 60 * 24 * 30)))
+    const sentPaid = allInvoices.filter(i => i.type === 'sent' && i.status === 'paid' && (i.paid_date as string) >= ps && (i.paid_date as string) <= pe)
+    const recvPaid = allInvoices.filter(i => i.type === 'received' && i.status === 'paid' && (i.paid_date as string) >= ps && (i.paid_date as string) <= pe)
+    const invoiceRev  = sentPaid.reduce((s, i) => s + n(i.amount), 0)  // net of VAT
+    const invoiceExp  = recvPaid.reduce((s, i) => s + n(i.amount), 0)
+    const snapRev6b   = hasInvoices ? 0 : n(snapshot.monthly_revenue) * months6b
+    const nalleRev    = invoiceRev + snapRev6b
+    const extraRev    = n(answers.net_sales_extra)
+    const otherIncome = n(answers.other_income)
+    const totalRev    = nalleRev + extraRev + otherIncome
+
+    // Expenses: NALLE logged + invoice payables + extra fields
+    const periodExp6b = (expenses ?? []).filter(e => (e.date as string) >= ps && (e.date as string) <= pe)
+    const nalleExp    = periodExp6b.reduce((s, e) => s + n(e.amount), 0)
+    const wages       = n(answers.wages)
+    const deprec      = n(answers.depreciation)
+    const entertain   = n(answers.entertainment)
+    const entertainDed = entertain * 0.5
+    const intExp      = n(answers.interest_expense)
+    const totalExp    = nalleExp + invoiceExp + wages + deprec + entertainDed + intExp
+
+    // Taxable income
+    const bizResult   = totalRev - totalExp
+    const prevLoss    = n(answers.prev_losses)
+    const taxable     = Math.max(0, bizResult - prevLoss)
+    const estTax      = taxable * 0.20   // Finnish corporate tax rate 20%
+
+    // Balance sheet
+    const bankBal     = n(snapshot.bank_balance)
+    const recv        = n(snapshot.accounts_receivable)
+    const fixAss      = n(answers.fixed_assets)
+    const inv         = n(answers.inventory)
+    const totAss      = bankBal + recv + fixAss + inv
+    const ap          = n(snapshot.accounts_payable)
+    const loansAmt    = n(answers.loans)
+    const totLiab     = ap + loansAmt
+    const shareCap    = n(answers.share_capital)
+    const retained    = totAss - totLiab - shareCap
+
+    // Shareholders
+    const sh1Shares   = n(answers.sh1_shares)
+    const totShares   = n(answers.total_shares) || sh1Shares
+    const sh1Pct      = totShares > 0 ? ((sh1Shares / totShares) * 100).toFixed(1) : '100.0'
+
+    // Deadline: 4 months after last calendar month of accounting period
+    const peDate      = new Date(pe)
+    const deadlineDate = new Date(peDate.getFullYear(), peDate.getMonth() + 5, 0)
+    const deadline    = deadlineDate.toLocaleDateString('fi-FI')
+
+    periodStart = ps
+    periodEnd   = pe
+    periodLabel = `${ps} – ${pe}`
+    title = `6B Veroilmoitus · ${new Date(pe).getFullYear()}`
+
+    content = {
+      type: 'form_6b',
+      title,
+      business_name: businessName,
+      ytunnus: answers.ytunnus ?? '',
+      period: periodLabel,
+      generated_at: new Date().toISOString().split('T')[0],
+      income: {
+        nalle_revenue: fmt(nalleRev), nalle_revenue_raw: nalleRev,
+        extra_revenue: fmt(extraRev), extra_revenue_raw: extraRev,
+        other_income: fmt(otherIncome), other_income_raw: otherIncome,
+        total_revenue: fmt(totalRev), total_revenue_raw: totalRev,
+      },
+      expenses: {
+        nalle_expenses: fmt(nalleExp + invoiceExp), nalle_expenses_raw: nalleExp + invoiceExp,
+        wages: fmt(wages), wages_raw: wages,
+        depreciation: fmt(deprec), depreciation_raw: deprec,
+        entertainment_full: fmt(entertain), entertainment_full_raw: entertain,
+        entertainment_deductible: fmt(entertainDed), entertainment_deductible_raw: entertainDed,
+        interest_expense: fmt(intExp), interest_expense_raw: intExp,
+        total_expenses: fmt(totalExp), total_expenses_raw: totalExp,
+      },
+      taxable_income: {
+        business_result: fmt(bizResult), business_result_raw: bizResult,
+        prev_losses: fmt(prevLoss), prev_losses_raw: prevLoss,
+        taxable: fmt(taxable), taxable_raw: taxable,
+        estimated_tax: fmt(estTax), estimated_tax_raw: estTax,
+      },
+      balance_sheet: {
+        bank_balance: fmt(bankBal), bank_balance_raw: bankBal,
+        receivables: fmt(recv), receivables_raw: recv,
+        fixed_assets: fmt(fixAss), fixed_assets_raw: fixAss,
+        inventory: fmt(inv), inventory_raw: inv,
+        total_assets: fmt(totAss), total_assets_raw: totAss,
+        accounts_payable: fmt(ap), accounts_payable_raw: ap,
+        loans: fmt(loansAmt), loans_raw: loansAmt,
+        total_liabilities: fmt(totLiab), total_liabilities_raw: totLiab,
+        share_capital: fmt(shareCap), share_capital_raw: shareCap,
+        retained_earnings: fmt(retained), retained_earnings_raw: retained,
+      },
+      shareholders: answers.sh1_name ? [{
+        name: answers.sh1_name,
+        id: answers.sh1_id ?? '',
+        shares: sh1Shares,
+        total_shares: totShares,
+        pct: sh1Pct,
+      }] : [],
+      dividends: {
+        paid: fmt(n(answers.dividends_paid)),
+        paid_raw: n(answers.dividends_paid),
+      },
+      submission: { deadline, form: 'Lomake 6B (3052)', method: 'OmaVero (vero.fi)' },
     }
   } else {
     return NextResponse.json({ error: 'Unknown report type' }, { status: 400 })

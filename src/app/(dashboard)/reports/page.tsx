@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 const REPORT_META: Record<string, { label: string; icon: string; desc: string }> = {
-  pnl:           { label: 'Profit & Loss',  icon: '📊', desc: 'Revenue, expenses and net profit for a period' },
-  balance_sheet: { label: 'Balance Sheet',  icon: '⚖️', desc: 'Assets, liabilities and equity at a point in time' },
-  cash_flow:     { label: 'Cash Flow',      icon: '💧', desc: 'How cash moved through the business' },
+  pnl:           { label: 'Profit & Loss',    icon: '📊', desc: 'Revenue, expenses and net profit for a period' },
+  balance_sheet: { label: 'Balance Sheet',    icon: '⚖️', desc: 'Assets, liabilities and equity at a point in time' },
+  cash_flow:     { label: 'Cash Flow',        icon: '💧', desc: 'How cash moved through the business' },
+  form_6b:       { label: '6B Veroilmoitus', icon: '🏛️', desc: 'Finnish corporate income tax return (OY, osuuskunta)' },
 }
 
 export default async function ReportsPage() {
