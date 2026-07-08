@@ -19,7 +19,7 @@ export default function SignupPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({ email, password })
     if (error) {
-      setError(error.message)
+      setError(error.message || 'Something went wrong. Please try again.')
       setLoading(false)
     } else {
       router.push('/intake')
