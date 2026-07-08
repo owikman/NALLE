@@ -1,0 +1,19 @@
+name: Keep Supabase alive
+
+on:
+  schedule:
+    - cron: '0 8 * * 1,4'  # Every Monday and Thursday at 8am UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://nalle.vercel.app/api/health")
+          echo "Status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed with status $STATUS"
+            exit 1
+          fi
