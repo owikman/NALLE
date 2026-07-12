@@ -265,13 +265,13 @@ export async function POST(request: Request) {
     const taxable     = Math.max(0, bizResult - prevLoss)
     const estTax      = taxable * 0.20   // Finnish corporate tax rate 20%
 
-    // Balance sheet
-    const bankBal     = n(snapshot.bank_balance)
-    const recv        = n(snapshot.accounts_receivable)
+    // Balance sheet — use user-entered year-end figures, fall back to current snapshot
+    const bankBal     = answers.bank_balance     !== undefined ? n(answers.bank_balance)     : n(snapshot.bank_balance)
+    const recv        = answers.receivables       !== undefined ? n(answers.receivables)       : n(snapshot.accounts_receivable)
     const fixAss      = n(answers.fixed_assets)
     const inv         = n(answers.inventory)
     const totAss      = bankBal + recv + fixAss + inv
-    const ap          = n(snapshot.accounts_payable)
+    const ap          = answers.accounts_payable  !== undefined ? n(answers.accounts_payable)  : n(snapshot.accounts_payable)
     const loansAmt    = n(answers.loans)
     const totLiab     = ap + loansAmt
     const shareCap    = n(answers.share_capital)
