@@ -71,7 +71,7 @@ export default function PrintPage() {
   const exp  = content.expenses
   const tax  = content.taxable_income
   const bs   = content.balance_sheet
-  const [periodStart, periodEnd] = content.period.split(' – ')
+  const [periodStart, periodEnd] = (content.period ?? '').split(/\s*[–-]\s*/)
   const sh = content.shareholders ?? []
   const generatedDate = new Date().toLocaleDateString('fi-FI')
 
