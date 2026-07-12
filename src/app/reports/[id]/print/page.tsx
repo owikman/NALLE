@@ -64,10 +64,6 @@ export default function PrintPage() {
       })
   }, [id])
 
-  useEffect(() => {
-    if (content) setTimeout(() => window.print(), 500)
-  }, [content])
-
   if (error) return <div style={{ padding: 40, fontFamily: 'sans-serif', color: '#dc2626' }}>{error}</div>
   if (!content) return <div style={{ padding: 40, fontFamily: 'sans-serif', color: '#6b7280' }}>Ladataan...</div>
 
