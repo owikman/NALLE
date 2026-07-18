@@ -241,9 +241,14 @@ export default async function ReportViewPage({ params }: { params: Promise<{ id:
         </div>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           {content.type === 'form_6b' ? (
-            <Link href={`/reports/${id}/print`} target="_blank" style={{ fontSize: 13, color: '#1a1a2e', border: '1px solid #1a1a2e', borderRadius: 10, padding: '9px 16px', textDecoration: 'none', fontWeight: 600, background: 'white' }}>
-              ↓ Lataa PDF (Lomake 6B)
-            </Link>
+            <>
+              <Link href={`/reports/${id}/print`} target="_blank" style={{ fontSize: 13, color: '#1a1a2e', border: '1px solid #1a1a2e', borderRadius: 10, padding: '9px 16px', textDecoration: 'none', fontWeight: 600, background: 'white' }}>
+                ↓ Lataa PDF (Lomake 6B)
+              </Link>
+              <Link href={`/reports/${id}/tilinpaatos`} target="_blank" style={{ fontSize: 13, color: '#2563eb', border: '1px solid #dbeafe', borderRadius: 10, padding: '9px 16px', textDecoration: 'none', fontWeight: 600, background: '#eff6ff' }}>
+                ↓ Lataa tilinpäätösluonnos
+              </Link>
+            </>
           ) : (
             <Link href={`/api/reports/generate?id=${id}&type=${report.report_type}`} style={{ fontSize: 13, color: '#2563eb', border: '1px solid #dbeafe', borderRadius: 10, padding: '9px 16px', textDecoration: 'none', fontWeight: 500, background: '#eff6ff' }}>
               ↓ Download Excel
