@@ -92,6 +92,7 @@ export default function TilinpaatosPage() {
   const shareCap = raw(bs, 'share_capital_raw')
   const ownEquity = totAss - totLiab
   const retained  = ownEquity - shareCap
+  const dividendsPaidRaw = content.dividends?.paid_raw ?? 0
 
   return (
     <>
@@ -206,6 +207,28 @@ export default function TilinpaatosPage() {
           <p>
             <strong>Tilintarkastus:</strong> Yhtiössä ei ole valittu tilintarkastajaa. Tätä tilinpäätöstä ei ole tilintarkastettu.
           </p>
+        </div>
+
+        {/* ── HALLITUKSEN ESITYS TULOKSEN KÄSITTELYSTÄ ─────────────────── */}
+        <SectionTitle title="Hallituksen esitys tilikauden tuloksen käsittelystä" />
+        <div style={{ border: '1px solid #ccc', borderTop: 'none', padding: '10px 12px', fontSize: 10, lineHeight: 1.7 }}>
+          {tilikaudenVoitto < 0 ? (
+            <p>
+              Tilikauden tappio oli {fmt(Math.abs(tilikaudenVoitto))}. Hallitus esittää, että tappio kirjataan
+              edellisten tilikausien voittovarojen tilille.
+            </p>
+          ) : dividendsPaidRaw > 0 ? (
+            <p>
+              Tilikauden voitto oli {fmt(tilikaudenVoitto)}. Hallitus esittää, että voitosta jaetaan osinkona
+              {' '}{fmt(dividendsPaidRaw)} ja jäljelle jäävä {fmt(tilikaudenVoitto - dividendsPaidRaw)} siirretään
+              voittovarojen tilille.
+            </p>
+          ) : (
+            <p>
+              Tilikauden voitto oli {fmt(tilikaudenVoitto)}. Hallitus esittää, että voitto siirretään
+              voittovarojen tilille eikä osinkoa jaeta.
+            </p>
+          )}
         </div>
 
         {/* ── ALLEKIRJOITUKSET ──────────────────────────────────────── */}
