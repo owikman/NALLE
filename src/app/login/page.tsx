@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [guestLoading, setGuestLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -23,6 +24,20 @@ export default function LoginPage() {
       setLoading(false)
     } else {
       router.push('/')
+      router.refresh()
+    }
+  }
+
+  async function handleGuestLogin() {
+    setError(null)
+    setGuestLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInAnonymously()
+    if (error) {
+      setError(error.message || 'Guest access is unavailable right now. Please try again.')
+      setGuestLoading(false)
+    } else {
+      router.push('/intake')
       router.refresh()
     }
   }
@@ -130,6 +145,30 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>or</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            disabled={guestLoading}
+            style={{
+              width: '100%', padding: '10px',
+              background: 'var(--surface)',
+              color: 'var(--text)', border: '1px solid var(--border)',
+              borderRadius: 10, fontSize: 14, fontWeight: 500,
+              cursor: guestLoading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {guestLoading ? 'Setting up guest access…' : 'Continue as guest'}
+          </button>
+          <p style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
+            No account needed — explore NALLE with a temporary session
+          </p>
 
           <p style={{ marginTop: 24, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center' }}>
             No account?{' '}
