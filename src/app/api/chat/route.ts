@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getActiveCompanyId } from '@/lib/supabase/company'
+import { getTaseReadiness } from '@/lib/ledger/tase'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { streamText } from 'ai'
 import { NextResponse } from 'next/server'
@@ -35,6 +36,8 @@ async function buildFinancialContext(userId: string) {
     return acc
   }, {})
 
+  const taseSection = companyId ? await buildTaseReadinessSection(db, companyId) : '## Tase Readiness\nNo company selected yet.'
+
   return `
 ## Business Profile
 - Name: ${profile?.business_name ?? 'Unknown'}
@@ -67,7 +70,35 @@ ${Object.entries(expenseByCategory).length > 0
 ${obligations && obligations.length > 0
     ? obligations.map(o => `- ${o.obligation_type} — due ${o.due_date} (${o.status}): ${o.notes ?? ''}`).join('\n')
     : '- No open obligations'}
+
+${taseSection}
 `.trim()
+}
+
+/**
+ * The ONLY source the model should use to answer "what's missing before my
+ * tase is ready" — the exact same deterministic list the /tase page shows,
+ * so the model can report or link to real gaps but never invent a number.
+ */
+async function buildTaseReadinessSection(db: ReturnType<typeof createServiceClient>, companyId: string): Promise<string> {
+  const readiness = await getTaseReadiness(db, companyId)
+  const stateLabel = { missing: 'Missing information', ready: 'Ready for review', reconciled: 'Reconciled draft (not accountant-approved)' }[readiness.state]
+
+  const incompleteGroups = readiness.groups.filter(g => !g.complete)
+  const blockingLines = incompleteGroups.length > 0
+    ? incompleteGroups.map(g => `- Answer: "${g.title}" (link: /tase/wizard?group=${g.key})`).join('\n')
+    : '- None — all setup questions are answered'
+
+  const taskLines = readiness.openTasks.length > 0
+    ? readiness.openTasks.map(t => `- ${t.title} (link: ${t.link_href ?? '/tase/wizard'})`).join('\n')
+    : '- None open'
+
+  return `## Tase Readiness
+- Current state: ${stateLabel}
+- Unanswered setup questions:
+${blockingLines}
+- Open follow-up items (things marked "I don't know" or needing review):
+${taskLines}`
 }
 
 export async function POST(request: Request) {
@@ -122,6 +153,8 @@ Your role is to:
 Always base your answers on the user's actual financial data below. If data is missing, say so and suggest they complete the intake.
 
 When discussing money, always use euros (€) and Finnish formatting.
+
+When asked what's missing before their tase is ready (or anything like it), use ONLY the "Tase Readiness" section below for your answer — list the unanswered questions and open items it names, with their links, in a short ordered list. Never estimate, guess, or invent a missing figure yourself.
 
 Here is the user's current financial data:
 

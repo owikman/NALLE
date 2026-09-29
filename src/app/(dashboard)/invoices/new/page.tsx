@@ -27,6 +27,7 @@ export default function NewInvoicePage() {
   const [dragging, setDragging] = useState(false)
   const [scanned, setScanned] = useState(false)
   const [fileUrl, setFileUrl] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   // Form fields
   const [counterparty, setCounterparty] = useState('')
@@ -79,6 +80,7 @@ export default function NewInvoicePage() {
       if (json.issue_date) setIssueDate(json.issue_date)
       if (json.due_date) setDueDate(json.due_date)
       if (json.file_url) setFileUrl(json.file_url)
+      if (json.preview_url) setPreviewUrl(json.preview_url)
       setScanned(true)
       setStage('form')
     } catch (err) {
@@ -364,8 +366,8 @@ export default function NewInvoicePage() {
           </div>
         </button>
 
-        {fileUrl && (
-          <a href={fileUrl} target="_blank" rel="noopener noreferrer"
+        {previewUrl && (
+          <a href={previewUrl} target="_blank" rel="noopener noreferrer"
             style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#2563eb', textDecoration: 'none' }}>
             📄 View uploaded invoice
           </a>

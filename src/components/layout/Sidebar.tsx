@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus, Brain, FileText, Menu, X, Scale } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus, Brain, FileText, Menu, X, Scale, FolderOpen } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
@@ -11,6 +11,7 @@ const nav = [
   { href: '/intake', label: 'Intake', icon: ClipboardList },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/invoices', label: 'Invoices', icon: FileText },
+  { href: '/documents', label: 'Documents', icon: FolderOpen },
   { href: '/checklists', label: 'Checklists', icon: CheckSquare },
   { href: '/reports', label: 'Reports', icon: FileBarChart },
   { href: '/compliance', label: 'Compliance', icon: Shield },

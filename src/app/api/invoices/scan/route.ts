@@ -21,14 +21,18 @@ export async function POST(request: Request) {
   const isPdf = file.type === 'application/pdf' || ext === 'pdf'
   const mediaType = isPdf ? 'application/pdf' : (file.type as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif') || 'image/jpeg'
 
-  // Upload to storage for record-keeping
+  // Upload to storage for record-keeping. The 'receipts' bucket is private,
+  // so we store the storage path (not a public URL, which would 404) and
+  // hand back a short-lived signed URL only for the immediate review step.
   const db = createServiceClient()
   const storagePath = `invoices/${user.id}/${Date.now()}.${ext}`
   let file_url: string | null = null
+  let preview_url: string | null = null
   const { error: uploadErr } = await db.storage.from('receipts').upload(storagePath, buffer, { contentType: mediaType })
   if (!uploadErr) {
-    const { data: { publicUrl } } = db.storage.from('receipts').getPublicUrl(storagePath)
-    file_url = publicUrl
+    file_url = storagePath
+    const { data: signed } = await db.storage.from('receipts').createSignedUrl(storagePath, 60 * 60)
+    preview_url = signed?.signedUrl ?? null
   }
 
   // Build the content block for Claude
@@ -69,5 +73,5 @@ export async function POST(request: Request) {
     extracted = JSON.parse(match ? match[0] : raw)
   } catch { /* fall through with empty */ }
 
-  return NextResponse.json({ ...extracted, file_url })
+  return NextResponse.json({ ...extracted, file_url, preview_url })
 }
