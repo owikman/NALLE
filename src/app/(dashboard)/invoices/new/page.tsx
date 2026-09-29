@@ -38,6 +38,7 @@ export default function NewInvoicePage() {
   const [issueDate, setIssueDate] = useState(today)
   const [dueDate, setDueDate] = useState(in30)
   const [alreadyPaid, setAlreadyPaid] = useState(false)
+  const [category, setCategory] = useState('other')
 
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -105,6 +106,7 @@ export default function NewInvoicePage() {
           due_date: type === 'sent' ? dueDate : null,
           paid: alreadyPaid,
           file_url: fileUrl,
+          category: type === 'received' ? category : undefined,
         }),
       })
       const json = await res.json()
@@ -329,6 +331,27 @@ export default function NewInvoicePage() {
             </div>
           )}
         </div>
+
+        {type === 'received' && (
+          <div>
+            <label style={labelStyle}>Expense category</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {[
+                { value: 'vehicle', label: '🚗 Vehicle' },
+                { value: 'equipment', label: '🔧 Equipment' },
+                { value: 'travel', label: '✈️ Travel' },
+                { value: 'software', label: '💻 Software' },
+                { value: 'personnel', label: '👤 Personnel' },
+                { value: 'other', label: '📦 Other' },
+              ].map(opt => (
+                <button key={opt.value} type="button" onClick={() => setCategory(opt.value)}
+                  style={{ padding: '12px 8px', borderRadius: 12, border: category === opt.value ? '1.5px solid #3b82f6' : '1px solid #e5e7eb', background: category === opt.value ? '#eff6ff' : 'white', color: category === opt.value ? '#1d4ed8' : '#6b7280', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <button onClick={() => setAlreadyPaid(v => !v)}
           style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: `1.5px solid ${alreadyPaid ? '#86efac' : '#e5e7eb'}`, borderRadius: 12, padding: '13px 16px', cursor: 'pointer', width: '100%', textAlign: 'left' }}>

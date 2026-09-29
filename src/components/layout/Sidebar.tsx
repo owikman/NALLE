@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus, Brain, FileText, Menu, X } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, Receipt, CheckSquare, FileBarChart, Shield, MessageSquare, Sparkles, LogOut, ChevronDown, Plus, Brain, FileText, Menu, X, Scale } from 'lucide-react'
 import { useState } from 'react'
 
 const nav = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/tase', label: 'Get my tase ready', icon: Scale },
   { href: '/intake', label: 'Intake', icon: ClipboardList },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/invoices', label: 'Invoices', icon: FileText },

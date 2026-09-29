@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { getActiveCompanyId } from '@/lib/supabase/company'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { streamText } from 'ai'
 import { NextResponse } from 'next/server'
@@ -9,18 +10,20 @@ export const maxDuration = 60
 
 async function buildFinancialContext(userId: string) {
   const db = createServiceClient()
+  const companyId = await getActiveCompanyId(userId)
+  const scopeCol = companyId ? 'company_id' : 'user_id'
+  const scopeVal = companyId ?? userId
 
   const [{ data: profile }, { data: snapshot }, { data: expenses }, { data: obligations }] =
     await Promise.all([
       db.from('profiles').select('*').eq('id', userId).single(),
-      db.from('financial_snapshots').select('*').eq('user_id', userId)
+      db.from('financial_snapshots').select('*').eq(scopeCol, scopeVal)
         .order('snapshot_date', { ascending: false }).limit(1).single(),
-      db.from('expense_logs').select('category, amount, description, date')
-        .eq('user_id', userId)
+      db.from('expense_logs').select('category, amount, description, date').eq(scopeCol, scopeVal)
         .gte('date', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!)
         .order('date', { ascending: false }),
-      db.from('compliance_obligations').select('*')
-        .eq('user_id', userId).neq('status', 'completed')
+      db.from('compliance_obligations').select('*').eq(scopeCol, scopeVal)
+        .neq('status', 'completed')
         .order('due_date', { ascending: true }),
     ])
 

@@ -33,6 +33,7 @@ export default function NewExpensePage() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]!)
   const [category, setCategory] = useState('other')
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [paidStatus, setPaidStatus] = useState<'paid_by_company' | 'pending_reimbursement'>('paid_by_company')
 
   // Mileage state
   const [mFrom, setMFrom] = useState('')
@@ -71,18 +72,20 @@ export default function NewExpensePage() {
     e.preventDefault()
     if (!amount || !description) { setError('Amount and description are required.'); return }
     setLoading(true); setError(null)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error: err } = await supabase.from('expense_logs').insert({
-      user_id: user.id,
-      template_id: selectedTemplate?.id ?? null,
-      amount: parseFloat(amount),
-      vat_amount: parseFloat(vatAmount.toFixed(2)),
-      category, description, date,
-      receipt_url: receiptUrl ?? null,
+    const res = await fetch('/api/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        template_id: selectedTemplate?.id ?? null,
+        amount: parseFloat(amount),
+        vat_amount: parseFloat(vatAmount.toFixed(2)),
+        category, description, date,
+        receipt_url: receiptUrl ?? null,
+        paid_status: paidStatus,
+      }),
     })
-    if (err) { setError(err.message); setLoading(false) }
+    const json = await res.json()
+    if (!res.ok) { setError(json.error ?? 'Failed to save'); setLoading(false) }
     else { router.push('/expenses'); router.refresh() }
   }
 
@@ -90,22 +93,25 @@ export default function NewExpensePage() {
     e.preventDefault()
     if (!mKm || !mFrom || !mTo) { setError('From, To, and Distance are required.'); return }
     setLoading(true); setError(null)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
     const desc = mPurpose ? `Mileage: ${mFrom} → ${mTo} (${mPurpose})` : `Mileage: ${mFrom} → ${mTo}`
-    const { error: err } = await supabase.from('expense_logs').insert({
-      user_id: user.id,
-      amount: parseFloat(mileageTotal.toFixed(2)),
-      vat_amount: 0,
-      category: 'vehicle',
-      description: desc,
-      date: mDate,
-      mileage_km: parseFloat(mKm),
-      mileage_from: mFrom,
-      mileage_to: mTo,
+    const res = await fetch('/api/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: parseFloat(mileageTotal.toFixed(2)),
+        vat_amount: 0,
+        category: 'vehicle',
+        description: desc,
+        date: mDate,
+        mileage_km: parseFloat(mKm),
+        mileage_from: mFrom,
+        mileage_to: mTo,
+        // Mileage is definitionally the owner's personal vehicle — always pending reimbursement.
+        paid_status: 'pending_reimbursement',
+      }),
     })
-    if (err) { setError(err.message); setLoading(false) }
+    const json = await res.json()
+    if (!res.ok) { setError(json.error ?? 'Failed to save'); setLoading(false) }
     else { router.push('/expenses'); router.refresh() }
   }
 
@@ -321,6 +327,22 @@ export default function NewExpensePage() {
               </button>
             ))}
           </div>
+        </div>
+        <div>
+          <label style={labelStyle}>Who paid for this?</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {([
+              { value: 'paid_by_company' as const, label: 'Company bank' },
+              { value: 'pending_reimbursement' as const, label: 'I paid personally' },
+            ]).map(opt => (
+              <button key={opt.value} type="button" onClick={() => setPaidStatus(opt.value)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: paidStatus === opt.value ? '1.5px solid #3b82f6' : '1px solid #e5e7eb', background: paidStatus === opt.value ? '#eff6ff' : 'white', color: paidStatus === opt.value ? '#1d4ed8' : '#6b7280', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {paidStatus === 'pending_reimbursement' && (
+            <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>The company will owe you this amount until it&apos;s reimbursed.</p>
+          )}
         </div>
         {error && <p style={{ fontSize: 13, color: '#dc2626' }}>{error}</p>}
         <button type="submit" disabled={loading} style={{ background: '#2563eb', color: 'white', borderRadius: 14, padding: '15px', fontSize: 15, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>

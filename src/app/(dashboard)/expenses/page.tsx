@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getActiveCompanyId } from '@/lib/supabase/company'
 import Link from 'next/link'
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -18,10 +19,13 @@ const CATEGORY_COLORS: Record<string, { bg: string; color: string }> = {
 export default async function ExpensesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const companyId = await getActiveCompanyId(user!.id)
 
-  const { data: expenses } = await supabase
-    .from('expense_logs').select('id,amount,vat_amount,category,description,date,receipt_url,mileage_km,mileage_from,mileage_to').eq('user_id', user!.id)
+  let expensesQuery = supabase
+    .from('expense_logs').select('id,amount,vat_amount,category,description,date,receipt_url,mileage_km,mileage_from,mileage_to')
     .order('date', { ascending: false }).limit(100)
+  expensesQuery = companyId ? expensesQuery.eq('company_id', companyId) : expensesQuery.eq('user_id', user!.id)
+  const { data: expenses } = await expensesQuery
 
   const total = expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0
   const totalVat = expenses?.reduce((sum, e) => sum + e.vat_amount, 0) ?? 0
