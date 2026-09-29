@@ -77,21 +77,33 @@ export class JournalEntriesBuilder {
 }
 
 class JournalLinesBuilder {
+  private mode: 'insert' | 'query' = 'query'
   private payload: { entry_id: string; account_id: string; debit: number; credit: number }[] = []
+  private filters: Filter[] = []
 
   constructor(private entries: Map<string, StoredEntry>) {}
 
-  insert(rows: typeof this.payload): this { this.payload = rows; return this }
+  insert(rows: typeof this.payload): this { this.mode = 'insert'; this.payload = rows; return this }
+  select(): this { return this }
+  eq(col: string, val: unknown): this { this.filters.push({ col, op: 'eq', val }); return this }
+  in(col: string, vals: unknown[]): this { this.filters.push({ col, op: 'in', val: vals }); return this }
 
-  then<TResult1 = { error: null }, TResult2 = never>(
-    onfulfilled?: ((value: { error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+  then<TResult1 = { data: { account_id: string; debit: number; credit: number }[]; error: null }, TResult2 = never>(
+    onfulfilled?: ((value: { data: { account_id: string; debit: number; credit: number }[]; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
-    for (const row of this.payload) {
-      const entry = this.entries.get(row.entry_id)
-      if (entry) entry.lines.push({ account_id: row.account_id, debit: row.debit, credit: row.credit })
+    if (this.mode === 'insert') {
+      for (const row of this.payload) {
+        const entry = this.entries.get(row.entry_id)
+        if (entry) entry.lines.push({ account_id: row.account_id, debit: row.debit, credit: row.credit })
+      }
+      return Promise.resolve({ data: [], error: null }).then(onfulfilled, onrejected)
     }
-    return Promise.resolve({ error: null }).then(onfulfilled, onrejected)
+
+    // Query mode: filters apply to the entry_id filter only (the shape opening-balance.ts uses).
+    const entryIdFilter = this.filters.find(f => f.col === 'entry_id')
+    const entry = entryIdFilter ? this.entries.get(entryIdFilter.val as string) : undefined
+    return Promise.resolve({ data: entry?.lines ?? [], error: null }).then(onfulfilled, onrejected)
   }
 }
 

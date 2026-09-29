@@ -17,11 +17,12 @@ export async function GET(request: Request) {
 
   const db = createServiceClient()
   try {
-    const [readiness, tase] = await Promise.all([
+    const [{ data: company }, readiness, tase] = await Promise.all([
+      db.from('companies').select('business_name').eq('id', companyId).single(),
       getTaseReadiness(db, companyId),
       computeTase(db, companyId, asOf),
     ])
-    return NextResponse.json({ asOf, readiness, tase })
+    return NextResponse.json({ asOf, companyName: company?.business_name ?? null, readiness, tase })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to compute tase' }, { status: 500 })
   }

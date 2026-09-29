@@ -5,7 +5,7 @@ import { syncOpeningBalanceEntry, type SetupAnswers } from '@/lib/ledger/opening
 import { WIZARD_GROUPS, findField } from '@/lib/ledger/wizard-questions'
 import { NextResponse } from 'next/server'
 
-const OPENING_BALANCE_GROUPS = new Set(['ledger_start', 'bank_accounts', 'capital_and_loans', 'receivables_and_payables'])
+const OPENING_BALANCE_GROUPS = new Set(['ledger_start', 'bank_accounts', 'capital_and_loans', 'receivables_and_payables', 'vat_setup'])
 
 export async function GET() {
   const supabase = await createClient()
@@ -100,12 +100,14 @@ export async function POST(request: Request) {
   }
 
   let openingEntryId: string | null = null
+  let postingError: string | null = null
   if (OPENING_BALANCE_GROUPS.has(body.group_key)) {
-    const { data: allResponses, error: allErr } = await db
-      .from('setup_responses')
-      .select('question_key, answer_value, status')
-      .eq('company_id', companyId)
+    const [{ data: allResponses, error: allErr }, { data: company, error: companyErr }] = await Promise.all([
+      db.from('setup_responses').select('question_key, answer_value, status').eq('company_id', companyId),
+      db.from('companies').select('vat_registered, is_salary_payer').eq('id', companyId).single(),
+    ])
     if (allErr) return NextResponse.json({ error: allErr.message }, { status: 500 })
+    if (companyErr || !company) return NextResponse.json({ error: companyErr?.message ?? 'Company not found' }, { status: 500 })
 
     const answers: SetupAnswers = {}
     for (const r of allResponses ?? []) {
@@ -119,11 +121,16 @@ export async function POST(request: Request) {
         createdBy: user.id,
         entryDate: ledgerStartDate,
         answers,
+        company,
       })
     } catch (postingErr) {
+      // Surfaced to the client rather than only logged — a silently-failed
+      // opening balance is exactly the "confident-looking but wrong" outcome
+      // this feature exists to prevent.
+      postingError = postingErr instanceof Error ? postingErr.message : 'Failed to update the ledger'
       console.error('Failed to sync opening balance entry for company', companyId, postingErr)
     }
   }
 
-  return NextResponse.json({ ok: true, openingEntryPosted: Boolean(openingEntryId) })
+  return NextResponse.json({ ok: true, openingEntryPosted: Boolean(openingEntryId), postingError })
 }

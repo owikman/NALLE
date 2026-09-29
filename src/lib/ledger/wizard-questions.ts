@@ -18,25 +18,30 @@ export interface WizardField {
   blocksOpeningBalance: boolean
 }
 
+export interface CompanyFlags {
+  vat_registered: boolean
+  is_salary_payer: boolean
+}
+
 export interface WizardGroup {
   key: string
   title: string
   intro?: string
   fields: WizardField[]
   /** Only show this group if the predicate returns true for the company's current profile. */
-  showIf?: (company: { vat_registered: boolean; is_salary_payer: boolean }) => boolean
+  showIf?: (company: CompanyFlags) => boolean
 }
 
 export const WIZARD_GROUPS: WizardGroup[] = [
   {
     key: 'ledger_start',
     title: 'When does your ledger start?',
-    intro: "We'll use this as the starting point for every balance below.",
+    intro: "We'll use this as the starting point for every balance below — everything from this date forward is tracked transaction by transaction; everything before it is just a starting total.",
     fields: [
       {
         key: 'ledger_start_date',
         label: 'Ledger start date',
-        help: 'Usually the day the company started, or the first day of your current fiscal year if you have earlier accounts.',
+        help: "Want a balance sheet of today with the least effort? Use today's date, then answer the next few questions with today's actual figures — no history needed. Use an earlier date (company founding, or your fiscal year start) only if you want full transaction history tracked from that point.",
         type: 'date',
         required: true,
         unknownAllowed: false,
@@ -105,6 +110,24 @@ export const WIZARD_GROUPS: WizardGroup[] = [
         unknownAllowed: true,
         blocksOpeningBalance: true,
       },
+      {
+        key: 'business_loans_balance',
+        label: 'Any business loans or credit (from a bank, not from you) outstanding on your ledger start date?',
+        help: 'Enter 0 if none.',
+        type: 'currency',
+        required: true,
+        unknownAllowed: true,
+        blocksOpeningBalance: true,
+      },
+      {
+        key: 'fixed_assets_value',
+        label: 'Value of equipment, vehicles, or other fixed assets the company owns, as of your ledger start date',
+        help: 'Enter 0 if none — most new companies do.',
+        type: 'currency',
+        required: true,
+        unknownAllowed: true,
+        blocksOpeningBalance: true,
+      },
     ],
   },
   {
@@ -148,6 +171,24 @@ export const WIZARD_GROUPS: WizardGroup[] = [
         unknownAllowed: false,
         blocksOpeningBalance: false,
       },
+      {
+        key: 'vat_payable_opening',
+        label: 'VAT you owe Vero, not yet paid, as of your ledger start date',
+        help: 'Enter 0 if none, or if you\'re starting fresh right after a VAT period closed.',
+        type: 'currency',
+        required: true,
+        unknownAllowed: true,
+        blocksOpeningBalance: true,
+      },
+      {
+        key: 'vat_receivable_opening',
+        label: 'VAT Vero owes you (a refund not yet received), as of your ledger start date',
+        help: 'Enter 0 if none.',
+        type: 'currency',
+        required: true,
+        unknownAllowed: true,
+        blocksOpeningBalance: true,
+      },
     ],
   },
   {
@@ -168,8 +209,17 @@ export const WIZARD_GROUPS: WizardGroup[] = [
   },
 ]
 
-export function allBlockingKeys(): string[] {
-  return WIZARD_GROUPS.flatMap(g => g.fields).filter(f => f.blocksOpeningBalance).map(f => f.key)
+/**
+ * Blocking keys for a company's actual visible groups only — a VAT or
+ * salary question that a company never sees (because showIf excludes them)
+ * must never block their tase forever. Pass the company's real flags.
+ */
+export function allBlockingKeys(company: CompanyFlags): string[] {
+  return WIZARD_GROUPS
+    .filter(g => !g.showIf || g.showIf(company))
+    .flatMap(g => g.fields)
+    .filter(f => f.blocksOpeningBalance)
+    .map(f => f.key)
 }
 
 export function findField(questionKey: string): WizardField | undefined {

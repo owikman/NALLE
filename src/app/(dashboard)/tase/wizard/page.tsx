@@ -103,6 +103,7 @@ function WizardForm() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to save')
+      if (json.postingError) throw new Error(`Saved your answer, but the ledger update failed: ${json.postingError}`)
       if ('openingEntryPosted' in json) setOpeningPosted(json.openingEntryPosted)
 
       if (groupIndex < groups.length - 1) {

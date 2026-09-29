@@ -99,9 +99,14 @@ function Workspace() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Tase</h1>
           <p style={{ fontSize: 14, color: '#9ca3af' }}>Vastaavaa &amp; Vastattavaa as of the date below</p>
         </div>
-        <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>As of date</label>
-          <input type="date" value={asOf} onChange={e => setAsOf(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '10px 14px', fontSize: 14 }} />
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>As of date</label>
+            <input type="date" value={asOf} onChange={e => setAsOf(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '10px 14px', fontSize: 14 }} />
+          </div>
+          <Link href={`/tase/print?as_of=${asOf}`} target="_blank" style={{ border: '1px solid #e5e7eb', borderRadius: 10, padding: '10px 16px', fontSize: 14, fontWeight: 600, color: '#374151', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            📄 Print / Export
+          </Link>
         </div>
       </div>
 

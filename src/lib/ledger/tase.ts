@@ -26,6 +26,9 @@ export interface TaseTotals {
   totalAssets: number
   totalLiabilitiesAndEquity: number
   balanced: boolean
+  /** Every account with a balance, including zero — for a formal report that lists full categories rather than hiding empty ones. */
+  allBalances: AccountBalance[]
+  currentPeriodResult: number
 }
 
 function round2(n: number): number {
@@ -90,6 +93,8 @@ export function buildTase(accountBalances: AccountBalance[]): TaseTotals {
     totalAssets,
     totalLiabilitiesAndEquity,
     balanced: Math.abs(totalAssets - totalLiabilitiesAndEquity) < 0.01,
+    allBalances: accountBalances,
+    currentPeriodResult,
   }
 }
 

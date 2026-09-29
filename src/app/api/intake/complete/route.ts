@@ -49,6 +49,11 @@ export async function POST(request: Request) {
 
     // Set as active company
     await db.from('profiles').update({ active_company_id: companyId, onboarding_completed: true }).eq('id', user.id)
+
+    // Seed the ledger's chart of accounts — without this, every journal posting
+    // for this company silently fails with an unknown-account-code error.
+    const { error: seedErr } = await db.rpc('seed_default_chart_of_accounts', { p_company_id: companyId })
+    if (seedErr) console.error('Failed to seed chart of accounts for company', companyId, seedErr)
   }
 
   // Keep profiles in sync for backward compat (chat/reports still read profiles)
