@@ -1,7 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { getActiveCompanyId } from '@/lib/supabase/company'
-import { WIZARD_GROUPS } from '@/lib/ledger/wizard-questions'
+import { getTaseReadiness, type TaseState } from '@/lib/ledger/tase'
 import Link from 'next/link'
+
+const STATE_COPY: Record<TaseState, { label: string; color: string; bg: string; desc: string }> = {
+  missing: { label: 'Missing information', color: '#b45309', bg: '#fffbeb', desc: 'Answer the setup questions below before a tase can be generated.' },
+  ready: { label: 'Ready for review', color: '#1d4ed8', bg: '#eff6ff', desc: 'The numbers balance, but some items still need your confirmation before this is a reconciled draft.' },
+  reconciled: { label: 'Reconciled draft', color: '#15803d', bg: '#f0fdf4', desc: "Everything is answered and balances — still a draft, not an accountant-approved statement." },
+}
 
 export default async function TasePage() {
   const supabase = await createClient()
@@ -16,40 +23,23 @@ export default async function TasePage() {
     )
   }
 
-  const { data: company } = await supabase.from('companies').select('vat_registered, is_salary_payer, business_name').eq('id', companyId).single()
-  const { data: responses } = await supabase.from('setup_responses').select('question_key, status').eq('company_id', companyId)
-  const { data: openTasks } = await supabase.from('follow_up_tasks').select('*').eq('company_id', companyId).eq('status', 'open').order('created_at', { ascending: true })
-  const { data: openingEntries } = await supabase.from('journal_entries').select('id').eq('company_id', companyId).eq('source_type', 'opening_balance')
-
-  const groups = WIZARD_GROUPS.filter(g => !g.showIf || g.showIf(company ?? { vat_registered: false, is_salary_payer: false }))
-  const responseByKey = new Map((responses ?? []).map(r => [r.question_key, r.status]))
-
-  const groupStatus = groups.map(g => {
-    const statuses = g.fields.map(f => responseByKey.get(f.key) ?? 'unanswered')
-    const complete = statuses.every(s => s !== 'unanswered')
-    const hasUnknown = statuses.some(s => s === 'unknown')
-    return { group: g, complete, hasUnknown }
-  })
-
-  const allComplete = groupStatus.every(g => g.complete)
-  const hasOpeningEntry = (openingEntries ?? []).length > 0
-  const hasOpenTasks = (openTasks ?? []).length > 0
-
-  let state: 'missing' | 'ready' | 'reconciled' = 'missing'
-  if (allComplete && hasOpeningEntry) state = hasOpenTasks ? 'ready' : 'reconciled'
-
-  const stateCopy: Record<typeof state, { label: string; color: string; bg: string; desc: string }> = {
-    missing: { label: 'Missing information', color: '#b45309', bg: '#fffbeb', desc: 'Answer the setup questions below before a tase can be generated.' },
-    ready: { label: 'Ready for review', color: '#1d4ed8', bg: '#eff6ff', desc: 'The numbers balance, but some items still need your confirmation before this is a reconciled draft.' },
-    reconciled: { label: 'Reconciled draft', color: '#15803d', bg: '#f0fdf4', desc: "Everything is answered and balances — still a draft, not an accountant-approved statement." },
-  }
-  const copy = stateCopy[state]
+  const db = createServiceClient()
+  const [{ data: company }, readiness] = await Promise.all([
+    db.from('companies').select('business_name').eq('id', companyId).single(),
+    getTaseReadiness(db, companyId),
+  ])
+  const copy = STATE_COPY[readiness.state]
 
   return (
     <div>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Get my tase ready</h1>
-        <p style={{ fontSize: 14, color: '#9ca3af' }}>{company?.business_name ?? 'Your company'}&apos;s path to an accurate välitase</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32, flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Get my tase ready</h1>
+          <p style={{ fontSize: 14, color: '#9ca3af' }}>{company?.business_name ?? 'Your company'}&apos;s path to an accurate välitase</p>
+        </div>
+        <Link href="/tase/workspace" style={{ background: '#2563eb', color: 'white', borderRadius: 12, padding: '12px 20px', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+          View tase →
+        </Link>
       </div>
 
       <div style={{ background: copy.bg, border: `1px solid ${copy.color}22`, borderRadius: 16, padding: 24, marginBottom: 28 }}>
@@ -60,12 +50,12 @@ export default async function TasePage() {
       <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: 24, marginBottom: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 16 }}>Setup</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {groupStatus.map(({ group, complete, hasUnknown }) => (
-            <Link key={group.key} href={`/tase/wizard?group=${group.key}`}
+          {readiness.groups.map(g => (
+            <Link key={g.key} href={`/tase/wizard?group=${g.key}`}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 12, border: '1px solid #f0f0f0', textDecoration: 'none' }}>
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{group.title}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 99, background: complete ? (hasUnknown ? '#fef3c7' : '#dcfce7') : '#f3f4f6', color: complete ? (hasUnknown ? '#92400e' : '#166534') : '#9ca3af' }}>
-                {complete ? (hasUnknown ? 'Has unknowns' : 'Done') : 'Not started'}
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>{g.title}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 99, background: g.complete ? (g.hasUnknown ? '#fef3c7' : '#dcfce7') : '#f3f4f6', color: g.complete ? (g.hasUnknown ? '#92400e' : '#166534') : '#9ca3af' }}>
+                {g.complete ? (g.hasUnknown ? 'Has unknowns' : 'Done') : 'Not started'}
               </span>
             </Link>
           ))}
@@ -75,11 +65,11 @@ export default async function TasePage() {
         </Link>
       </div>
 
-      {hasOpenTasks && (
+      {readiness.openTasks.length > 0 && (
         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #f0f0f0', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
           <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', marginBottom: 16 }}>Open items</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {(openTasks ?? []).map(t => (
+            {readiness.openTasks.map(t => (
               <Link key={t.id} href={t.link_href ?? '/tase/wizard'} style={{ display: 'block', padding: '12px 16px', borderRadius: 12, border: '1px solid #fde68a', background: '#fffbeb', textDecoration: 'none', fontSize: 14, color: '#92400e' }}>
                 {t.title}
               </Link>
